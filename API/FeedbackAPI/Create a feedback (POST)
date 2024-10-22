@@ -1,3 +1,6 @@
+/api/x_1462550_feedback/feedbackapi/create_feedback
+
+
 (function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
     // Parse the request body
     var requestBody = request.body.data || {};
