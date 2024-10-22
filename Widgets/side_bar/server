@@ -1,0 +1,42 @@
+(function() {
+    // Initialize the array to store all the user's role records
+    data.userRoles = [];
+
+    // Create a GlideRecord object for the table with user role records
+    var roleGr = new GlideRecord('x_1462550_feedback_track'); // Replace with your actual table name
+    roleGr.addQuery('user', gs.getUserID()); // Filter by the logged-in user's sys_id
+    roleGr.addNullQuery('end'); // Filter where 'end' is empty (null)
+    roleGr.query();
+
+    // Loop through records with 'end' empty and add them to the array
+    while (roleGr.next()) {
+        data.userRoles.push({
+            role: roleGr.getValue('role').toString(),
+            start: roleGr.getValue('start').toString(),
+            end: roleGr.getValue('end').toString(),
+            team: roleGr.getValue('team').toString(),
+            sys_id: roleGr.getValue('sys_id').toString()
+        });
+    }
+
+    // Now get the records where 'end' is not empty and order by 'end' descending
+    roleGr.initialize();
+    roleGr.addQuery('user', gs.getUserID()); // Filter by the logged-in user's sys_id
+    roleGr.addNotNullQuery('end'); // Filter where 'end' is not empty
+    roleGr.orderByDesc('end'); // Sort by 'end' in descending order
+    roleGr.query();
+
+    // Loop through records with 'end' not empty and add them to the array
+    while (roleGr.next()) {
+        data.userRoles.push({
+            role: roleGr.getValue('role').toString(),
+            start: roleGr.getValue('start').toString(),
+            end: roleGr.getValue('end').toString(),
+            team: roleGr.getValue('team').toString(),
+            sys_id: roleGr.getValue('sys_id').toString()
+        });
+    }
+
+    // Log the user's roles for debugging
+    gs.info("User's Roles: " + JSON.stringify(data.userRoles));
+})();
