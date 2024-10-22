@@ -1,0 +1,97 @@
+/api/x_1462550_feedback/feedbackapi/feedback
+
+
+(function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+    // Get the team_member_name parameter from the request
+    var teamMemberName = request.queryParams.team_member_name;
+
+    // Get the logged-in user's sys_id
+    var userId = gs.getUserID();
+
+// Create a GlideRecord object for the sys_user table to get the team member's sys_id
+    var teamMemberGr = new GlideRecord('sys_user');
+    teamMemberGr.addQuery('name', teamMemberName);
+    teamMemberGr.query();
+
+    if (!teamMemberGr.next()) {
+        // If the team member is not found, respond with an error
+        response.setStatus(404);
+        response.setHeader('Content-Type', 'application/json');
+        response.getStreamWriter().writeString(JSON.stringify({
+            error: 'Team member not found: ' + teamMemberName
+        }));
+        return;
+    }
+
+    // Get the sys_id of the team member
+    var teamMemberSysId = teamMemberGr.getValue('sys_id');
+
+
+    // Create a GlideRecord object for the sys_user table
+    var userGr = new GlideRecord('sys_user');
+    if (userGr.get(userId)) {
+        var teamLeadName = userGr.getValue('name');
+        
+        // Create a GlideRecord object for the feedback table
+        var gr = new GlideRecord('x_1462550_feedback_feedbacktable');
+        gr.addQuery('team_member_name', teamMemberSysId);
+        gr.addQuery('team_lead_name', userId);
+        gr.query();
+
+        var feedbacks = [];
+
+        // Iterate over the results and format them
+        while (gr.next()) {
+            var comments = gr.getValue('comments');
+            var formattedComments = [];
+
+            try {
+                var commentsArray = JSON.parse(comments) || [];
+                formattedComments = commentsArray.map(function(comment) {
+                    return {
+                        date: comment.date || "", // Handle missing fields
+                        text: comment.text || ""
+                    };
+                });
+            } catch (e) {
+                // Handle JSON parsing errors
+                gs.error('Error parsing comments JSON: ' + e.message);
+                formattedComments = [];
+            }
+
+            feedbacks.push({
+				sys_id: gr.getValue('sys_id') || '',
+				team_lead_name: teamLeadName,
+                record_id: gr.getValue('record_id') || '',
+                starting_from: gr.getValue('starting_from') || '',
+                ends_on: gr.getValue('ends_on') || '',
+                date_created: gr.getValue('date_created') || '',
+                submission_status: gr.getValue('submission_status'),
+                feedback_text: gr.getValue('feedback_text') || '',
+                comments: formattedComments,
+                technical_knowledge: gr.getValue('technical_knowledge') || '',
+                communication: gr.getValue('communication') || '',
+                teamwork: gr.getValue('teamwork') || '',
+                leadership: gr.getValue('leadership') || '',
+                commitment: gr.getValue('commitment') || '',
+                extra_contribution: gr.getValue('extra_contribution') || ''
+            });
+        }
+
+        // Convert the array of feedback records to a JSON string
+        var feedbackJSON = JSON.stringify(feedbacks);
+
+        // Set the response body with the feedback records in JSON format
+        response.setStatus(200);
+        response.setHeader('Content-Type', 'application/json');
+        response.getStreamWriter().writeString(feedbackJSON);
+
+    } else {
+        // Handle case where the user record is not found
+        response.setStatus(500);
+        response.setHeader('Content-Type', 'application/json');
+        response.getStreamWriter().writeString(JSON.stringify({
+            error: 'User record not found for sys_id: ' + userId
+        }));
+    }
+})(request, response);
