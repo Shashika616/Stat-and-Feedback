@@ -1,0 +1,12 @@
+(function() {
+  // Server-side logic to get user roles
+  var userRoles = [];
+  var gr = new GlideRecord('sys_user_has_role');
+  gr.addQuery('user', gs.getUserID());
+  gr.query();
+  while (gr.next()) {
+    userRoles.push(gr.role.name.toString());
+  }
+
+  data.userRoles = userRoles; // Pass the roles to the client-side
+})();
