@@ -1,0 +1,494 @@
+api.controller = function($scope, $http, $window, $timeout) {
+  var fl = this;
+
+  // Initialize variables
+  fl.feedbacks = [];
+  fl.teamMemberName = '';
+  fl.teamLeadName = '';
+  fl.selectedFeedback = {};
+  fl.recordID = '';
+  fl.showModal = false;
+  fl.currentPage = 1; // Current page number
+  fl.itemsPerPage = 5; // Number of items per page
+  fl.totalItems = 0; // Total number of items
+  fl.noPages = '';
+  fl.copyfeedbacks = [];
+	fl.errorMessage = '';
+
+  // Filter variables
+  fl.filterStartDate = '';
+  fl.filterEndDate = '';
+	
+	fl.showBackToTop = true;
+	
+	// Function to scroll the feedback list back to the top
+		fl.scrollToTop = function() {
+    var container = document.getElementById('feedback-list'); 
+		if (container){
+			container.scrollTo({ top: 0, behavior: 'smooth' });
+		}else{
+			console.error("Container not found: feedback-list-container");
+		}
+   
+};
+	
+	// Function to detect scroll and show/hide the "Back to Top" button
+		//angular.element($window).on('scroll', function() {
+    // Show the button when the user scrolls down 200px
+   // var container = document.getElementById('feedback-list-container');
+    //fl.showBackToTop = true; // Adjust scroll threshold as needed
+   // $scope.$apply();
+//});
+	
+    // Log the userInfo
+    console.log('User Info:', fl.data.userInfo);
+
+    // Additional logic for handling feedbacks or other data
+    if (fl.data.response && fl.data.response.feedbacks) {
+        console.log('Feedbacks:', fl.data.response.feedbacks);
+    }
+
+   // Initialization function
+function initialize() {
+  var teamMemberName = fl.data.userInfo.name;
+  console.log('Initializing controller with teamMemberName:', teamMemberName);
+
+  if (teamMemberName) {
+    // Replace the URL with your scripted REST API endpoint
+    $http.get('/api/x_1462550_feedback/feedbackapi/feedbacks-member', {
+      params: { team_member_name: teamMemberName }
+    }).then(function(response) {
+      console.log('API response for GET request:', response);
+      if (response.data && response.data.length > 0) {
+        fl.feedbacks = response.data.map(function(feedback) {
+          var sub_state = '';
+					console.log('submission status :', feedback.submission_status);
+          if (feedback.submission_status === '1') {
+            sub_state = 'Submitted';
+          } else if (feedback.submission_status === '0') {
+            sub_state = 'Pending';
+          }
+          return {
+            record_id: feedback.record_id,
+						team_lead_name: feedback.team_lead_name,
+            period: (feedback.starting_from && feedback.ends_on) ? 
+                    feedback.starting_from + ' - ' + feedback.ends_on : 
+                    'Feedback is still in progress',
+            dateCreated: feedback.date_created,
+            status: sub_state,
+            startingFrom: feedback.starting_from,
+            endOn: feedback.ends_on,
+            feedbackText: feedback.feedback_text,
+            comments: feedback.comments,
+            technical_knowledge: feedback.technical_knowledge,
+            communication: feedback.communication,
+            teamwork: feedback.teamwork,
+            leadership: feedback.leadership,
+            commitment: feedback.commitment,
+            extra_contribution: feedback.extra_contribution
+          };
+								});
+				// Filter the feedbacks to include only those with the status 'Submitted'
+				fl.feedbacks = fl.feedbacks.filter(function(feedback) {
+					return feedback.status === 'Submitted';
+				});
+
+				// Sort the filtered feedbacks by starting_from date in ascending order
+				fl.feedbacks.sort(function(a, b) {
+					if (a.startingFrom > b.startingFrom) return -1;
+					if (a.startingFrom < b.startingFrom) return 1;
+					return 0;
+				});
+
+        fl.teamMemberName = teamMemberName;
+				console.log('fl.teamMemberName : ', fl.teamMemberName);
+        console.log('Feedbacks loaded:', fl.feedbacks);
+        fl.totalItems = fl.feedbacks.length;
+        fl.noPages = Math.ceil(fl.totalItems / fl.itemsPerPage);
+        fl.DisplayedFeedbacks();
+        console.log('Total feedbacks : ', fl.totalItems);
+      } else {
+        fl.teamMemberName = teamMemberName;
+        fl.feedbacks = [];
+				isLoading = true;
+        fl.totalItems = 0;
+        console.log('No feedbacks found for team member:', teamMemberName);
+      }
+    }, function(error) {
+      alert('Error loading feedbacks');
+      console.error('Error in loadFeedbacks:', error);
+    });
+		
+     $http.get('/api/x_1462550_feedback/teammember_api/team_member_details', {
+			params: { team_member_name: teamMemberName }
+		}).then(function(response) {
+    if (response.data && response.data.length > 0) {
+        var teamMemberRecord = response.data[0];
+        fl.teamLeadName = teamMemberRecord.team_lead_name || 'Unknown';
+				console.log('Team Lead Name : ', fl.teamLeadName);
+        } else {
+					fl.errorMessage = 'No feedbacks found for the member';
+					fl.showErrorModal = true;
+          //alert('Team member not found.');
+        }
+      }, function(error) {
+			 		fl.errorMessage = 'Error loading Team Members';
+					fl.showErrorModal = true;
+        //alert('Error loading team member');
+        console.error('Error in loadTeamMember:', error);
+      });
+
+    } else {
+      alert('Invalid team member.');
+      console.log('Invalid teamMemberName:', teamMemberName);
+    }
+  }
+
+
+	
+	 // Function to generate a unique record ID
+  function generateUniqueRecordId(callback) {
+    var recordId = 'RID' + new Date().getTime(); // Generate ID based on timestamp
+    $http.get('/api/now/table/x_1462550_feedback_feedbacktable', {
+      params: { record_id: recordId }
+    }).then(function(response) {
+      if (response.data.result.length > 0) {
+        // If the record_id is not unique, recursively call the function
+        generateUniqueRecordId(callback);
+      } else {
+        // If the record_id is unique, return it
+        callback(recordId);
+      }
+    }, function(error) {
+      console.error('Error checking record ID uniqueness:', error);
+      alert('Error generating unique record ID');
+    });
+  }
+
+
+  // Function to get URL parameter
+  function getUrlParameter(name) {
+    var regex = new RegExp('[?&]' + name + '=([^&#]*)');
+    var results = regex.exec($window.location.search);
+    return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+  }
+
+  // Function to view feedback details
+  fl.viewDetails = function(feedback) {
+    fl.selectedFeedback = feedback;
+    console.log('Selected feedback for details:', fl.selectedFeedback);
+    console.log('Selected feedback comments:', fl.selectedFeedback.comments);
+    fl.showModal = true;
+		
+		// Add the 'show' class after a slight delay to trigger the transition
+  setTimeout(function() {
+    document.querySelector('.modal').classList.add('show');
+  }, 20); // 10ms delay to ensure the DOM is updated
+  };
+
+  // Function to close modal
+fl.closeModal = function() {
+  // Remove the 'show' class to start the transition
+  var modalElement = document.querySelector('.modal');
+  modalElement.classList.remove('show');
+
+  // After the transition ends, hide the modal
+  setTimeout(function() {
+    fl.showModal = false;
+    $scope.$apply(); // Apply scope changes after the transition
+  }, 300); // Match this delay to your CSS transition duration
+};
+	
+	
+	
+  // Function to format the date manually as yyyy-mm-dd
+  function formatDate(date) {
+    var d = new Date(date);
+    var month = '' + (d.getMonth() + 1);
+    var day = '' + d.getDate();
+    var year = d.getFullYear();
+
+    if (month.length < 2) month = '0' + month;
+    if (day.length < 2) day = '0' + day;
+
+    return [year, month, day].join('-');
+  }
+	
+	// Redirect to form_page
+  fl.redirectToFormPage = function(feedback) {
+		fl.selectedFeedback = feedback;
+		console.log('Feedback loaded', fl.selectedFeedback);
+		console.log('redirect member :',fl.teamMemberName);
+		console.log('redirect id :',fl.selectedFeedback.record_id);
+       var formPageUrl = '/feedback?id=form_page&team_member_name=' + fl.teamMemberName + '&record_id=' + fl.selectedFeedback.record_id;
+       $window.location.href = formPageUrl;
+  };
+	
+		// Function to close the error modal
+	fl.closeErrorModal = function() {
+		// Remove the 'show' class to start the transition
+  var modalElement = document.querySelector('.error-modal');
+  modalElement.classList.remove('show');
+
+  // After the transition ends, hide the modal
+  setTimeout(function() {
+    fl.showErrorModal = false;
+    $scope.$apply(); // Apply scope changes after the transition
+  }, 300); // Match this delay to your CSS transition duration
+	};
+	
+	// Display feedbacks in initializing
+	 fl.DisplayedFeedbacks = function() {
+    fl.isLoading = true;
+    fl.leaving = true;
+
+    $timeout(function() {
+        var startIndex = (fl.currentPage - 1) * fl.itemsPerPage;
+        var endIndex = startIndex + fl.itemsPerPage;
+
+        // Create a copy of the feedbacks array
+        fl.copyfeedbacks = fl.feedbacks.slice(); // Make a shallow copy of the feedbacks array
+        fl.totalItems = fl.copyfeedbacks.length;
+				fl.noPages = Math.ceil(fl.totalItems / fl.itemsPerPage);
+        // Update displayedFeedbacks based on copyfeedbacks
+        fl.displayedFeedbacks = fl.copyfeedbacks.slice(startIndex, endIndex);
+
+        console.log('Updated Displayed Feedbacks:', fl.displayedFeedbacks);
+        console.log('Feedbacks Copy:', fl.copyfeedbacks);
+
+        // Ensure old items are hidden
+        var feedbackItems = document.querySelectorAll('.feedback-item');
+        feedbackItems.forEach(function(item) {
+            item.classList.remove('show'); // Hide all items before applying staggered effect
+        });
+
+        // Apply staggered effect
+        $timeout(function() {
+            var newFeedbackItems = document.querySelectorAll('.feedback-item');
+            newFeedbackItems.forEach(function(item, index) {
+                $timeout(function() {
+                    item.classList.add('show'); // Apply the show class with delay
+                }, index * 300); // Adjust the delay as needed
+            });
+        }, 300); // Delay before starting the staggered effect
+
+        fl.leaving = false;
+        fl.entering = true;
+        fl.isLoading = false;
+
+        $timeout(function() {
+            fl.entering = false;
+        }, 300);
+    }, 300);
+};
+
+fl.updateDisplayedFeedbacks = function() {
+		fl.isLoading = true;
+    fl.leaving = true;
+    $timeout(function() {
+						var startIndex = (fl.currentPage - 1) * fl.itemsPerPage;
+            var endIndex = startIndex + fl.itemsPerPage;
+        // Check if fl.copyfeedbacks is available and has items
+        if (fl.copyfeedbacks && fl.copyfeedbacks.length > 0) {
+            // Update displayedFeedbacks based on copyfeedbacks
+            fl.displayedFeedbacks = fl.copyfeedbacks.slice(startIndex, endIndex);
+        } else {
+            fl.displayedFeedbacks = [];
+        }
+
+        console.log('Updated Displayed Feedbacks:', fl.displayedFeedbacks);
+ // Ensure old items are hidden
+        var feedbackItems = document.querySelectorAll('.feedback-item');
+        feedbackItems.forEach(function(item) {
+            item.classList.remove('show'); // Hide all items before applying staggered effect
+        });
+
+        // Apply staggered effect
+        $timeout(function() {
+            var newFeedbackItems = document.querySelectorAll('.feedback-item');
+            newFeedbackItems.forEach(function(item, index) {
+                $timeout(function() {
+                    item.classList.add('show'); // Apply the show class with delay
+                }, index * 300); // Adjust the delay as needed
+            });
+        }, 300); // Delay before starting the staggered effect
+        fl.leaving = false;
+        fl.entering = true;
+				fl.isLoading = false;
+        $timeout(function() {
+            fl.entering = false;
+						
+        }, 300);
+    }, 300);
+};
+
+	
+
+		// Function to change page with smooth transition
+	fl.changePage = function(pageNumber) {
+		if (pageNumber > 0 && pageNumber <= fl.noPages) {
+			var feedbackListElement = document.getElementById('feedback-list');
+
+			// Add the leave class to trigger the transition
+			feedbackListElement.classList.add('ng-leave');
+
+			// Set a timeout to wait for the transition to complete before updating the feedbacks
+			setTimeout(function() {
+				fl.currentPage = pageNumber;
+				fl.updateDisplayedFeedbacks();
+
+				// Remove the leave class and add the enter class to trigger the enter transition
+				feedbackListElement.classList.remove('ng-leave');
+				feedbackListElement.classList.add('ng-enter');
+
+				// Remove the enter class after the transition is done
+				setTimeout(function() {
+					feedbackListElement.classList.remove('ng-enter');
+				}, 300);
+			}, 300); 
+		}
+	};
+
+
+// Function to filter feedbacks by date range
+fl.filterFeedbacks = function() {
+    fl.currentPage = 1;
+
+    var startDate = formatDate(fl.filterStartDate);
+    console.log('Formatted Start Date:', startDate);
+    
+    var endDate = formatDate(fl.filterEndDate);
+    console.log('Formatted End Date:', endDate);
+
+    fl.copyfeedbacks = fl.feedbacks.filter(function(feedback) {
+        var feedbackStartDate = formatDate(feedback.startingFrom);
+        var feedbackEndDate = formatDate(feedback.endOn);
+
+        console.log('Feedback Start Date:', feedbackStartDate);
+        console.log('Feedback End Date:', feedbackEndDate);
+
+        // Check if feedback dates are valid
+        if (!feedbackStartDate || !feedbackEndDate) {
+            console.log('Invalid feedback date:', feedbackStartDate, feedbackEndDate);
+            return false;
+        }
+
+        // Check if feedback is within range
+        var isWithinRange = (!startDate || feedbackStartDate >= startDate) &&
+                            (!endDate || feedbackEndDate <= endDate);
+        console.log('Feedback within range:', isWithinRange);
+
+        return isWithinRange;
+    });
+
+    // Sort feedbacks to have 'Pending' status on top
+    fl.copyfeedbacks.sort(function(a, b) {
+        if (a.status === 'Pending' && b.status !== 'Pending') return -1;
+        if (a.status !== 'Pending' && b.status === 'Pending') return 1;
+        return 0;
+    });
+
+    // Update pagination details
+    fl.totalItems = fl.copyfeedbacks.length;
+    fl.noPages = Math.ceil(fl.totalItems / fl.itemsPerPage);
+
+    // Update displayed feedbacks
+    fl.updateDisplayedFeedbacks();
+
+    console.log('Filtered Feedbacks:', fl.copyfeedbacks);
+    console.log('Total Items:', fl.totalItems);
+    console.log('Number of Pages:', fl.noPages);
+};
+
+
+		// Function to clear date range filter
+		fl.clearFilter = function() {
+			fl.filterStartDate = '';
+			fl.filterEndDate = '';
+			fl.copyfeedbacks = angular.copy(fl.feedbacks);
+
+				// Sort feedbacks to have 'Pending' status on top
+		fl.copyfeedbacks.sort(function(a, b) {
+			if (a.status === 'Pending' && b.status !== 'Pending') {
+				return -1;
+			} else if (a.status !== 'Pending' && b.status === 'Pending') {
+				return 1;
+			}
+			return 0; // Maintain original order if both are the same status
+		});
+
+			fl.totalItems = fl.copyfeedbacks.length;
+			fl.noPages = Math.ceil(fl.totalItems / fl.itemsPerPage);
+			fl.updateDisplayedFeedbacks();
+		};
+	
+	
+fl.refreshwidget = function() {
+    var feedbackListElement = document.getElementById('feedback-list');
+
+    // If feedbackListElement is not found, log an error and return
+    if (!feedbackListElement) {
+			fl.DisplayedFeedbacks();
+        console.error('Element with ID "feedback-list" not found.');
+        return; // Exit the function if the element is not found
+    }
+
+    // Add the leave class to trigger the transition
+    feedbackListElement.classList.add('ng-leave');
+
+    // Set a timeout to wait for the transition to complete before updating the feedbacks
+    setTimeout(function() {
+        // Clear the filter criteria
+        fl.filterStartDate = '';
+        fl.filterEndDate = '';
+
+        // Initialize copyfeedbacks to an empty array
+        fl.copyfeedbacks = [];
+
+        // Check if fl.feedbacks is null or undefined; if so, reload all feedbacks
+        if (!Array.isArray(fl.feedbacks) || fl.feedbacks.length === 0) {
+            fl.loadAllFeedbacks(); // Call the function to reload all feedbacks
+        } else {
+            // Reset the copy of feedbacks
+            fl.copyfeedbacks = angular.copy(fl.feedbacks);
+
+            // Sort feedbacks to have 'Pending' status on top
+            fl.copyfeedbacks.sort(function(a, b) {
+                if (a.status === 'Pending' && b.status !== 'Pending') {
+                    return -1;
+                } else if (a.status !== 'Pending' && b.status === 'Pending') {
+                    return 1;
+                }
+                return 0; // Maintain original order if both are the same status
+            });
+        
+        }
+
+        // Reset pagination
+        fl.currentPage = 1;
+        fl.totalItems = fl.copyfeedbacks.length;
+        fl.noPages = Math.ceil(fl.totalItems / fl.itemsPerPage);
+
+        // Update the displayed feedbacks
+        fl.updateDisplayedFeedbacks();
+
+        // Remove the leave class and add the enter class to trigger the enter transition
+        feedbackListElement.classList.remove('ng-leave');
+        feedbackListElement.classList.add('ng-enter');
+
+        // Remove the enter class after the transition is done
+        setTimeout(function() {
+            feedbackListElement.classList.remove('ng-enter');
+        }, 300); 
+    }, 300); 
+};
+
+
+
+
+
+
+
+  // Initialize the controller
+  initialize();
+};
