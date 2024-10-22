@@ -1,0 +1,156 @@
+(function() {
+  var teamMemberName = $sp.getParameter('team_member_name');
+  var action = $sp.getParameter('action');
+  //var teamLeadName = gs.getUser() ? gs.getUser().getName() : '';  // Retrieve the actual team lead name as needed
+ 	data.userInfo = {};
+	var response = {};
+	
+
+    // Function to get user info
+    function getUserInfo() {
+        var userInfo = {};
+        var userId = gs.getUserID();
+        var userGr = new GlideRecord('sys_user');
+        
+        if (userGr.get(userId)) {
+            userInfo = {
+                sys_id: userGr.getValue('sys_id'),
+                user_name: userGr.getValue('user_name'),
+                name: userGr.getValue('name'),
+                email: userGr.getValue('email'),
+                phone: userGr.getValue('phone'),
+                title: userGr.getValue('title'),
+                department: userGr.getValue('department'),
+                company: userGr.getValue('company'),
+                manager: userGr.getValue('manager'),
+                location: userGr.getValue('location'),
+                // Add more fields as needed
+            };
+            
+            gs.info("User Info: " + JSON.stringify(userInfo));
+            return userInfo;
+        } else {
+            gs.error("User record not found for sys_id: " + userId);
+            return null;
+        }
+    }
+
+    // Retrieve user information
+    var userInfo = getUserInfo();
+    var teamLeadName = userInfo ? userInfo.name : '';
+
+
+  // Function to load all feedbacks based on the team member's name
+  function loadFeedbacks() {
+    if (teamMemberName && teamLeadName) {
+      var gr = new GlideRecord('x_1462550_feedback_feedbacktable');
+			gs.info('Logged user: ' + teamLeadName);
+      gr.addQuery('team_member_name', teamMemberName);
+			gr.addQuery('team_lead_name', teamLeadName);
+      gr.query();
+
+      var feedbacks = [];
+      var logMsg = "Loading feedbacks for team member: " + teamMemberName;
+
+      while (gr.next()) {
+        // Process and format the comments field
+        var comments = gr.getValue('comments');
+        var formattedComments = [];
+
+        try {
+          var commentsArray = JSON.parse(comments) || []; // Parse comments to array
+
+          // Format each comment to include the date and text
+          formattedComments = commentsArray.map(function(comment) {
+            return {
+              date: new GlideDateTime(comment.date).getDate().getDisplayValue(), // Convert to display format
+              text: comment.text
+            };
+          });
+        } catch (e) {
+          // If parsing fails, default to an empty array
+          formattedComments = [];
+        }
+
+        feedbacks.push({
+					record_id: gr.getValue('record_id') || '',
+          starting_from: gr.getValue('starting_from') || '', // Ensure it's a string
+          ends_on: gr.getValue('ends_on') || '', // Ensure it's a string
+          date_created: gr.getValue('date_created').toString(), // Ensure it's a string
+          submission_status: gr.getValue('submission_status') ? 'Submitted' : 'Pending', // Handle boolean
+          feedback_text: gr.getValue('feedback_text') || '', // Ensure this field is included
+          comments: formattedComments, // Use the formatted comments
+          technical_knowledge: gr.getValue('technical_knowledge') || '',
+          communication: gr.getValue('communication') || '',
+          teamwork: gr.getValue('teamwork') || '',
+          leadership: gr.getValue('leadership') || '',
+          commitment: gr.getValue('commitment') || '',
+          extra_contribution: gr.getValue('extra_contribution') || ''
+        });
+
+        logMsg += "\nFeedback ID: " + gr.getValue('sys_id') +
+                  "\nFeedback Text: " + gr.getValue('feedback_text') +
+                  "\nComments: " + JSON.stringify(formattedComments);
+      }
+
+      gs.info(logMsg); // Logging the gathered feedback info
+
+      response.feedbacks = feedbacks;
+      response.team_member_name = teamMemberName;
+    } else {
+      response.feedbacks = [];
+      response.team_member_name = 'Unknown';
+      response.error = 'Invalid team member or team Lead.';
+      gs.warn('Attempted to load feedbacks with invalid team member or team Lead.');
+    }
+  }
+	
+	 // Function to generate a unique record_id
+  function generateUniqueRecordId() {
+    var recordId;
+    var isUnique = false;
+
+    while (!isUnique) {
+      // Generate a new record_id, e.g., 'RID' + a timestamp
+      recordId = 'RID' + new GlideDateTime().getNumericValue(); // Example: 'RID' + timestamp
+
+      // Check if this record_id is already in use
+      var gr = new GlideRecord('x_1462550_feedback_feedbacktable');
+      gr.addQuery('record_id', recordId);
+      gr.query();
+
+      if (!gr.hasNext()) {
+        isUnique = true; // No existing record with this record_id, so it's unique
+      }
+    }
+
+    return recordId;
+  }
+
+  // Function to create a new feedback record
+  function createFeedback() {
+    var recordId = generateUniqueRecordId();
+
+    var gr = new GlideRecord('x_1462550_feedback_feedbacktable');
+    gr.initialize();
+    gr.setValue('record_id', recordId);
+    gr.setValue('team_member_name', teamMemberName);
+    gr.setValue('team_lead_name', teamLeadName);
+    gr.setValue('date_created', new GlideDateTime().getDisplayValue());
+    gr.setValue('submission_status', 'Pending');
+    gr.insert();
+
+    response.record_id = recordId;
+    response.message = 'New feedback record created';
+    gs.info('New feedback record created with ID: ' + recordId);
+  }
+
+  // Handle actions
+  if (action === 'load') {
+    loadFeedbacks();
+  } else if (action === 'create') {
+    createFeedback();
+  }
+
+  data = response;
+})();
