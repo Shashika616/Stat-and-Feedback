@@ -1,0 +1,72 @@
+(function() {
+    // Initialize the objects to hold user details and filtered team members
+    data.userInfo = {};
+    data.filteredTeamMembers = [];
+
+    // Get the logged-in user's sys_id
+    var userId = gs.getUserID();
+
+    // Create a GlideRecord object for the sys_user table
+    var userGr = new GlideRecord('sys_user');
+    
+    // Check if the record exists
+    if (userGr.get(userId)) {
+        // Populate the userInfo object with all relevant fields
+        data.userInfo = {
+            sys_id: userGr.getValue('sys_id'),
+            user_name: userGr.getValue('user_name'),
+            name: userGr.getValue('name'),
+            email: userGr.getValue('email'),
+            phone: userGr.getValue('phone'),
+            title: userGr.getValue('title'),
+            department: userGr.getValue('department'),
+            company: userGr.getValue('company'),
+            manager: userGr.getValue('manager'),
+            location: userGr.getValue('location'),
+            // Add more fields as needed
+        };
+
+        // Log user info for debugging
+        gs.info("User Info: " + JSON.stringify(data.userInfo));
+    } else {
+        // Log an error if user record is not found
+        gs.error("User record not found for sys_id: " + userId);
+    }
+
+   // Create a GlideRecord object for the table where you store the user records
+		var memberGr = new GlideRecord('x_1462550_feedback_track');
+		memberGr.addQuery('role', 'NOT IN', ['Lead', 'HR Lead']); // Exclude members with 'Lead' or 'HR Lead' roles
+		memberGr.query();
+
+		// Loop through the records and add them to the filteredTeamMembers array
+		while (memberGr.next()) {
+				// Get the sys_id of the user from the current table
+				var userSysId = memberGr.getValue('user').toString();
+
+				// Look up the corresponding user name from the sys_user table using the sys_id
+				if (userGr.get(userSysId)) {
+						var userName = userGr.getValue('name');
+
+						// Look up the team name from the sys_user_group table using the team reference sys_id
+						var teamName = '';
+						var teamSysId = memberGr.getValue('team').toString();
+						var teamGr = new GlideRecord('sys_user_group');
+						if (teamGr.get(teamSysId)) {
+								teamName = teamGr.getValue('name');
+						}
+
+						// Push the filtered team member details to the array
+						data.filteredTeamMembers.push({
+								sys_id: userSysId,
+								name: userName,
+								start: memberGr.getValue('start').toString(),
+								end: memberGr.getValue('end').toString(),
+								role: memberGr.getValue('role').toString(),
+								team: teamName // Use the retrieved team name
+						});
+				}
+		}
+
+		// Log the filtered team members for debugging
+		gs.info("Filtered Team Members: " + JSON.stringify(data.filteredTeamMembers));
+})();
