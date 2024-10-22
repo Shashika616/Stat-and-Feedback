@@ -1,0 +1,848 @@
+.feedback-list-container {
+  position: relative;
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  border-radius: 10px;
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); 
+  border: 2px solid #FFA500; /* Beautiful orange color */
+}
+
+.feedback-list-container h2 {
+  color: #FFA500; /* Beautiful orange color */
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+#feedback-list {
+  position: relative;
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid #ddd;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  height: 450px;
+  overflow: auto;
+}
+
+.feedback-item:not(view-button) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #fff;
+  border: 2px solid #FFDEAA;
+  border-radius: 5px;
+  transition: opacity 0.5s ease-in-out;
+  opacity: 0;
+}
+
+
+.feedback-item.show {
+	opacity: 1;
+}
+
+.feedback-item.ng-enter {
+  opacity: 0; /* Start with invisible */
+  transform: translateY(-10px); /* Optional: slight upward motion */
+}
+
+.feedback-item.ng-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+}
+
+.feedback-item .view-button {
+  background-color: #FFA500;
+  color: #fff;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: none;
+  animation: none;
+  opacity:0;
+}
+
+.feedback-item.show .view-button {
+  opacity: 1; /* Show the button after transition */
+}
+
+.feedback-item .view-button:hover {
+  background-color: #e59400;
+}
+
+/* Styles for the Back Button */
+.back-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background-color: #FFA500; /* Base background color */
+  color: white; /* Text color */
+  border: none; /* Remove default border */
+  padding: 10px 20px; /* Padding for button */
+  cursor: pointer; /* Pointer cursor on hover */
+  font-size: 12px; /* Font size */
+  display: flex; /* Flexbox for icon and text alignment */
+  align-items: center; /* Center align items */
+  border-radius: 5px; /* Rounded corners */
+  text-decoration: none; /* No underline on links */
+  transition: background-color 0.3s, transform 0.2s; /* Smooth transitions for hover and active states */
+}
+
+.back-button i {
+  margin-right: 8px; /* Space between icon and text */
+}
+
+/* Hover state */
+.back-button:hover {
+  background-color: #e59400; /* Darker background on hover */
+  transform: scale(1.05); /* Slightly scale up on hover */
+}
+
+/* Focus state */
+.back-button:focus {
+  outline: none; /* Remove default focus outline */
+  box-shadow: 0 0 0 2px rgba(255, 165, 0, 0.5); /* Add a shadow for focus indication */
+}
+
+/* Active state */
+.back-button:active {
+  background-color: #d88a00; /* Darker background when pressed */
+}
+
+.star-rating {
+  display: inline-block;
+  position: relative;
+  width: 25rem; /* Adjust based on your preference */
+  height: 3rem; /* Adjust height according to the size of stars */
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><g fill="%23ccc"><path d="M10 0l3 6h6l-4.5 3.5L16 20l-6-4-6 4 1.5-7.5L0 6h6z"/></g></svg>') repeat-x;
+  background-size: 50px 50px; /* Size of the stars */
+}
+
+.star-rating .filled {
+  display: block;
+  height: 100%;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><g fill="%23FFA500"><path d="M10 0l3 6h6l-4.5 3.5L16 20l-6-4-6 4 1.5-7.5L0 6h6z"/></g></svg>') repeat-x;
+  background-size: 50px 50px; /* Size of the stars */
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+
+/* Staggering effect for the feedback items */
+#feedback-list.ng-enter-stagger {
+  transition-delay: 0.3s; /* Adjust delay for the overall stagger effect */
+}
+
+#feedback-list .feedback-item.ng-enter-stagger {
+  transition-delay: calc(0.3s * $index);
+}
+
+
+
+.feedback-details {
+  flex: 1; /* Take remaining space */
+  height: 60px;
+}
+
+.feedback-item p {
+  margin: 0;
+  color: #333;
+  
+}
+
+/* Adjust button container layout */
+.feedback-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.feedback-buttons button {
+  background-color: #FFA500;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+  //transition: background-color 0.3s, transform 0.2s;
+}
+
+.feedback-buttons button:hover {
+  background-color: #e59400;
+  transform: scale(1.05);
+}
+
+.feedback-buttons button:focus {
+  outline: none;
+}
+
+.feedback-buttons button:active {
+  background-color: #d88a00;
+}
+
+.feedback-item .view-button {
+  background-color: #FFA500; /* Beautiful orange color */
+  color: #fff;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+
+.feedback-item .view-button:hover {
+  background-color: #e59400;
+}
+
+
+
+
+.status-submitted {
+  color: MediumSeaGreen; /* Green color for Submitted status */
+}
+
+.status-pending {
+  color: Tomato; /* Red color for Pending status */
+}
+
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+.modal[ng-show="fl.showModal"] {
+  display: block; /* Ensure modal is shown when ng-show is true */
+}
+
+.error-modal[ng-show="fl.showErrorModal"] {
+  display: block; /* Ensure modal is shown when ng-show is true */
+}
+
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 5% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  max-width: 600px;
+  border-radius: 10px;
+  font-family: Arial, sans-serif;
+}
+
+h2 {
+  text-align: center;
+  color: #FFA500;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Modal container */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  backdrop-filter: blur(5px);
+}
+
+/* Modal content */
+.modal-content {
+  background-color: #fefefe;
+  margin: 10% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 90%;
+  max-width: 700px;
+  border-radius: 10px;
+  transform: translateY(-50px);
+  transition: transform 0.3s ease-in-out;
+}
+/* Feedback details table */
+.feedback-details-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  table-layout: fixed;
+}
+
+.feedback-details-table th,
+.feedback-details-table td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.feedback-details-table th {
+  background-color: #ffecd0; /* Soft orange color for the left column */
+  color: #333; /* Darker text for better contrast */
+  font-weight: bold;
+  width: 13.8rem;
+}
+
+.feedback-details-table td {
+  background-color: #fff;  /* White background for the right column */
+  
+  /* Ensure that the text stays within the fixed size */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;  /* Allow text to wrap within the fixed size */
+  
+  /* Enable scrolling if the content exceeds the fixed size */
+  overflow-y: auto;
+  overflow-x: hidden;  /* Prevent horizontal overflow */
+  
+  /* Ensure the text fits within the cell padding */
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+/* Optional scrollbar styling */
+.feedback-details-table td::-webkit-scrollbar {
+  width: 6px;
+}
+
+.feedback-details-table td::-webkit-scrollbar-thumb {
+  background-color: #888;  /* Customize the scrollbar color */
+  border-radius: 4px;
+}
+
+.feedback-details-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Modal open state */
+.modal.show {
+  display: block;
+  opacity: 1;
+}
+
+.modal.show .modal-content {
+  transform: translateY(0);
+}
+
+/* Close button */
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.3s ease-in-out;
+}
+
+.close:hover,
+.close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+
+.feedback-list-container .create-feedback-button {
+  background-color: #FFA500; /* Beautiful orange color */
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  display: inline-block;
+  margin-left: 10px;
+}
+
+.feedback-list-container .create-feedback-button:hover {
+  background-color: #e59400;
+  transform: scale(1.05);
+}
+
+.feedback-list-container .create-feedback-button:focus {
+  outline: none;
+}
+
+.feedback-list-container .create-feedback-button:active {
+  background-color: #d88a00;
+}
+
+
+.feedback-list-container .refresh-button {
+  background-color: #FFA500; /* Beautiful orange color */
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  display: inline-block;
+  margin-right: 10px;
+  justify-content: flex-end; /* Align items to the right */
+  align-items: center; /* Center items vertically if needed */
+}
+
+.feedback-list-container .refresh-button:hover {
+  background-color: #e59400;
+  transform: scale(1.05);
+}
+
+.feedback-list-container .refresh-button:focus {
+  outline: none;
+}
+
+.feedback-list-container .refresh-button:active {
+  background-color: #d88a00;
+}
+
+/* Error modal styles */
+.error-modal {
+  display: none; /* Hidden by default */
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.5);
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+  opacity: 0; /* Start hidden */
+  visibility: hidden; /* Hide visibility */
+  backdrop-filter: blur(5px);
+}
+
+/* Modal open state */
+.error-modal.show {
+  display: block; /* Show the modal */
+  opacity: 1; /* Fade in */
+  visibility: visible; /* Make visible */
+}
+
+.error-modal-content {
+  position: absolute;
+  background-color: #fff;
+  margin: auto;
+  padding: 20px;
+  width: 400px;
+  border-radius: 10px;
+  top: 50%; /* Center vertically */
+  left: 50%; /* Center horizontally */
+  box-shadow: 0 0 20px 10px rgba(255, 129, 114, 0.5); /* Blurred shadow effect */
+  text-align: center;
+  transform: translate(-50%, -50%) scale(0.8); /* Start with a slight scale down */
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  backdrop-filter: blur(5px); /* Apply a blur to the background */
+}
+
+/* Modal open state with smooth transform */
+.error-modal.show .error-modal-content {
+  transform: translate(-50%, -50%) scale(1); /* Scale up to normal size */
+  opacity: 1; /* Ensure fully opaque */
+}
+
+/* Close button */
+.close {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  font-size: 30px;
+  cursor: pointer;
+}
+
+/* Error header */
+.error-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.error-icon {
+  width: 104px; /* Adjust size as needed */
+  height: 104px; /* Adjust size as needed */
+}
+
+/* Error Title */
+.error-title {
+  font-size: 34px;
+  font-weight: bold;
+  color: #333;
+  margin: 10px 0; /* Space above and below the title */
+}
+
+.exclamation-mark {
+  font-size: 60px;
+  color: #FFA500;
+  margin-right: 10px;
+}
+
+.error-modal h2 {
+  font-size: 34px;
+  color: #FFA500;
+}
+
+.error-modal p {
+  font-size: 20px;
+  color: #333;
+}
+
+.pagination-controls {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.pagination-controls button {
+  padding: 10px 15px;
+  margin: 0 5px;
+  border: none;
+  background-color: #FFA500;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.pagination-controls button:hover {
+  background-color: #FF8C00; /* Slightly darker orange on hover */
+  transform: scale(1.1); /* Slightly enlarge the button on hover */
+}
+
+.pagination-controls button[disabled] {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transition: background-color 0.3s ease, cursor 0.3s ease;
+}
+
+.pagination-controls span {
+  margin: 0 10px;
+  font-size: 16px;
+  transition: color 0.3s ease;
+}
+
+.pagination-controls span:hover {
+  color: #FFA500; /* Change color on hover */
+}
+
+
+/* Pagination Transition Styles */
+.feedback-item.ng-leave {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.feedback-item.ng-leave-active {
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity 0.3s ease-in-out, transform 0.5s ease-in-out;
+}
+
+.feedback-item.ng-enter {
+  opacity: 0;
+  transform: translateY(-100%);
+}
+
+.feedback-item.ng-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s ease-in-out, transform 0.5s ease-in-out;
+}
+
+
+
+.date-filter {
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.date-filter label {
+  margin-right: 10px;
+  font-weight: bold;
+}
+
+.date-filter input {
+  margin-right: 15px;
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+/* Loading container styles */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute; /* Positioned relative to #feedback-list */
+  top: 0; /* Adjust as needed */
+  left: 0; /* Adjust as needed */
+  width: 100%; /* Fill the width of #feedback-list */
+  height: 100%; /* Fill the height of #feedback-list */
+  //background-color: rgba(255, 255, 255, 0.8); /* Optional: Add a slight background to cover content */
+  z-index: 10; /* Ensure it is above other content */
+}
+
+/* Loading icon styles */
+.loading-icon {
+  //border: 8px solid #f3f3f3; /* Light grey */
+  border-top: 8px solid #ff6f00; /* Orange color */
+  border-radius: 50%;
+  width: 50px; /* Size of the loader */
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.no-feedbacks-message {
+    text-align: center;
+    padding: 20px;
+    font-size: 16px;
+    color: #FF8C00; /* Red color for error */
+    //position: fixed;
+    top: 68%;
+    left: 50%;
+    //transform: translate(-50%, -50%);
+    //border: 1px solid #FF8C00;
+    //border-radius: 8px;
+    //background-color: #f9f9f9;
+}
+
+.error-icon {
+    margin-right: 10px;
+    font-size: 20px;
+}
+
+
+
+/* Container for the full logo */
+.logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 42rem;
+  background-color: #f4f4f4;
+}
+
+/* Styling for the logo */
+.logo {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+/* "O" circle styling */
+.letter-o {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  border: 10px solid black;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #FFA500;
+  box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Heartbeat SVG line */
+.heartbeat-line {
+  width: 200px;
+  height: 100px;
+}
+
+.heartbeat {
+  fill: none;
+  stroke: white;
+  stroke-width: 7;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  transform-origin: center;
+  stroke-dasharray: 150; /* Smaller dash array for smoother animation */
+  stroke-dashoffset: 150; /* Start position */
+  animation: heartbeat 2s linear infinite; /* Linear animation for smoothness */
+}
+
+@keyframes heartbeat {
+  0% {
+    stroke-dashoffset: 150;
+  }
+  50% {
+    stroke-dashoffset: 0; /* Middle of the line */
+  }
+  100% {
+    stroke-dashoffset: -150; /* End of the line */
+  }
+}
+
+/* Confirmation Pop-up */
+.confirmation-popup {
+   position: fixed;
+  top: 0; /* Cover the entire height */
+  left: 0; /* Cover the entire width */
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  background-color: rgba(0, 0, 0, 0.7); /* Dark background with transparency */
+  backdrop-filter: blur(5px); /* Add blur effect to background */
+  opacity: 0; /* Start invisible */
+  transition: opacity 0.3s ease-in-out; /* Smooth transition */
+  z-index: 1000; /* Make sure it's on top */
+  text-align: center; /* Center text inside */
+  pointer-events: none; /* Disable interaction when not visible */
+}
+
+.confirmation-popup.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.btn-confirm, .btn-cancel {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.btn-confirm {
+  background-color: #FFA500;
+  color: white;
+}
+
+.btn-cancel {
+  background-color: #ddd;
+  color: #333;
+}
+
+.btn-cancel:last-child {
+  margin-right: 0;
+}
+
+.popup-content {
+  position: absolute; /* Position it within the full screen */
+  top: 50%; /* Center vertically */
+  left: 50%; /* Center horizontally */
+  transform: translate(-50%, -50%); /* Adjust position to be exactly centered */
+  padding: 30px; /* Increase padding for the pop-up content */
+  background-color: rgba(256, 256, 256); /* Slightly transparent background for the pop-up */
+  border: 2px solid #FFA500; /* Change border color to orange */
+  border-radius: 8px; /* Slightly round the corners */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Add a more pronounced shadow */
+  width: 400px; /* Set a fixed width */
+  max-width: 90%; /* Allow it to be responsive on smaller screens */
+
+}
+
+.popup-content h3 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.popup-content p {
+  margin-bottom: 20px;
+}
+
+.btn-confirm, .btn-cancel {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.btn-confirm {
+  background-color: #FFA500;
+  color: white;
+}
+
+.btn-cancel {
+  background-color: #ddd;
+  color: #333;
+}
+
+.btn-cancel:last-child {
+  margin-right: 0;
+}
+
+input[type="text"], input[type="number"], textarea {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-sizing: border-box;
+}
+
+textarea {
+  height: 150px; /* Adjust this height as needed */
+}
+
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.back-to-top {
+    position: absolute; /* Position it absolutely within the feedback-list-container */
+    right: 2rem; /* Distance from the right edge */
+    top: 95%; /* Keep it at 95% */
+    transform: translateY(-50%); /* Center it vertically */
+    background-color: #FFA500; /* Beautiful orange color */
+    color: #fff; /* White text */
+    border: none; /* Remove border */
+    padding: 15px 20px; /* Increase padding for a larger button */
+    font-size: 1.1rem; /* Increase font size for better visibility */
+    border-radius: 3.35rem; /* Rounded corners */
+    cursor: pointer; /* Pointer on hover */
+    transition: background-color 0.3s, transform 0.2s; /* Smooth transitions */
+}
+
+.back-to-top:hover {
+    background-color: #e59400; /* Darker shade on hover */
+    
+}
+
+.back-to-top:focus {
+    outline: none; /* Remove outline on focus */
+}
+
+
