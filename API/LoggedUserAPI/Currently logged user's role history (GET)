@@ -1,0 +1,78 @@
+/api/x_1462550_feedback/logged_user/rolehistory
+
+
+(function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+    try {
+        // Get the logged-in user's sys_id
+        var userId = gs.getUserID();
+        gs.info('Logged-in User ID: ' + userId);
+
+        // Create a GlideRecord object for the sys_user table to get the logged-in user's details
+        var userGr = new GlideRecord('sys_user');
+
+        if (userGr.get(userId)) {
+            // Retrieve the user's name, trim spaces, and convert to lowercase
+            var userName = userGr.getValue('name').trim().toLowerCase();
+            gs.info('Logged-in User Name (trimmed and lowercase): ' + userName);
+
+            // Create a GlideRecord object for the userRoleHistory table
+            var roleHistoryGr = new GlideRecord('x_1462550_feedback_user_role_tracking');
+
+            // Query for all role entries for the logged-in user, using a regex for more flexible matching
+            roleHistoryGr.addEncodedQuery('user_nameLIKE' + userName);
+            roleHistoryGr.query();
+
+            var userRoles = [];
+            gs.info('Number of roles found: ' + roleHistoryGr.getRowCount());
+
+            // Collect all the relevant role entries
+            while (roleHistoryGr.next()) {
+                var recordUserName = roleHistoryGr.getValue('user_name').trim().toLowerCase();
+                gs.info('Processing record with username: ' + recordUserName);
+                
+                userRoles.push({
+                    start_date: roleHistoryGr.getValue('week_start_date'),
+                    end_date: roleHistoryGr.getValue('week_end_date'),
+                    role: roleHistoryGr.getValue('role'),
+                    username: recordUserName, // Save the trimmed and lowercase username
+					team: roleHistoryGr.getValue('team')
+                });
+            }
+
+            gs.info('Roles: ' + JSON.stringify(userRoles));
+
+            // If roles are found, return them; otherwise, indicate no roles found
+            if (userRoles.length > 0) {
+                response.setStatus(200);
+                response.setHeader('Content-Type', 'application/json');
+                response.getStreamWriter().writeString(JSON.stringify(userRoles));
+            } else {
+                response.setStatus(404);
+                response.setHeader('Content-Type', 'application/json');
+                response.getStreamWriter().writeString(JSON.stringify({
+                    message: 'No role history found for the logged-in user.'
+                }));
+            }
+
+        } else {
+            // Handle case where user record is not found
+            response.setStatus(500);
+            response.setHeader('Content-Type', 'application/json');
+            response.getStreamWriter().writeString(JSON.stringify({
+                error: 'User record not found for sys_id: ' + userId
+            }));
+        }
+
+    } catch (e) {
+        // Log the error for debugging
+        gs.error("Error in scripted REST API: " + e.message);
+
+        // Set the response status, content type, and body
+        response.setStatus(500);
+        response.setHeader('Content-Type', 'application/json');
+
+        // Send a JSON error response
+        var errorResponse = JSON.stringify({ error: "Internal Server Error" });
+        response.getStreamWriter().writeString(errorResponse);
+    }
+})(request, response);
