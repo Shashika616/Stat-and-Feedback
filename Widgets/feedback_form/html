@@ -1,0 +1,70 @@
+ 
+
+<div ng-controller="FeedbackController as c" class="feedback-form-container">
+  
+  <!-- Back Button -->
+    <button class="back-button" ng-click="c.goBackToHome()">
+      <i class="fas fa-arrow-left"></i> Back
+    </button>
+
+  
+  <h2>Feedback Form</h2>
+  <form>
+    
+    
+    <!-- Starting From -->
+    <div class="form-group">
+      <label for="startingFrom">Starting From:</label>
+      <input type="date" id="startingFrom" ng-model="c.startingFrom" required>
+    </div>
+
+    <!-- End On -->
+    <div class="form-group">
+      <label for="endOn">End On:</label>
+      <input type="date" id="endOn" ng-model="c.endOn" required>
+    </div>
+
+    
+
+    <!-- Team Member Name -->
+    <div class="form-group">
+      <label for="teamMember">Team Member Name:</label>
+      <input type="text" id="teamMember" ng-model="c.teamMember" placeholder="Enter Team Member Name" required>
+    </div>
+
+    <!-- Feedback -->
+    <div class="form-group">
+      <label for="feedback">Feedback:</label>
+      <textarea id="feedback" ng-model="c.feedbackText" placeholder="Type your feedback here" required></textarea>
+    </div>
+
+   
+
+      <!-- Extra Contribution Rating -->
+     <div class="form-group">
+        <label>Extra Contribution:</label>
+        <textarea id="feedback" ng-model="c.extraContribution" placeholder="Type Extra Contribution here" ></textarea>
+    </div>
+
+    <button type="button" ng-click="c.showConfirmation()">Submit</button>
+  </form>
+
+  <!-- Confirmation Pop-up -->
+    <div class="confirmation-popup" ng-class="{ 'show': c.showModal }">
+    <div class="popup-content">
+      <h3>Confirm Submission</h3>
+      <p><strong>Do you want to submit the feedback? </strong></p>
+      <button class="btn-confirm" ng-click="c.confirmSubmit()">Yes</button>
+      <button class="btn-cancel" ng-click="c.closeModal()">No</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="alert-popup" ng-show="c.showAlert" ng-class="{'fade-in': c.showAlert, 'fade-out': !c.showAlert}">
+  <div class="alert-popup-content">
+    <p>{{ c.alertMessage }}</p>
+    <button type="button" ng-click="c.closeAlert()">Close</button>
+  </div>
+</div>
+
