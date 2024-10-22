@@ -1,0 +1,77 @@
+api.controller = function($scope, $window, $location) {
+  var c = this;
+  c.userRole = []; // To store the user's latest role
+  c.navOptions = []; // Navigation options based on the user's role
+
+  // Function to initialize the navigation options based on the user's roles
+  function initializeNavOptions() {
+    var latestRole = c.data.userRoles[0].role; // Get the user's latest role from the server-side data
+    var userRoles = c.data.userRoles; // Get all user roles from the server-side data
+
+    console.log('User roles:', userRoles);
+		
+    c.userRole = latestRole;
+		console.log('Latest User role:', c.userRole);
+
+    // Check if the user has any record with the role "Lead" even if the latest role is "Agent"
+    var hasLeadRole = userRoles.some(roleRecord => roleRecord.role === 'Lead');
+		console.log('Has Lead Role : ',hasLeadRole);
+
+    // If the user has the latest role as "Agent" but also has a "Lead" role in any record
+    if (latestRole === 'Agent' && hasLeadRole) {
+      c.userRole = 'Lead'; // Consider this user as a "Lead"
+			console.log('HIT');
+    }
+
+    // Set navigation options based on the user's role
+    if (c.userRole === 'Lead' || c.userRole === 'HR Lead') {
+      // Options for users with 'Lead' or 'HR Lead' roles
+      c.navOptions = [
+        { name: 'View Feedback', action: 'view-feedback', link: '/feedback?id=view_feedbacks_page' },
+        { name: 'Switch Lead View', action: 'switch-lead-view', link: '/feedback?id=homepage' }
+      ];
+    } else if (c.userRole === 'Agent') {
+      // Options for users with the 'Agent' role
+      c.navOptions = [
+        { name: 'View Feedback', action: 'view-feedback', link: '/feedback?id=view_feedbacks_page' }
+      ];
+    } else {
+      // Default options for users without specified roles
+      c.navOptions = [
+        { name: 'View Feedback', action: 'view-feedback', link: '/feedback?id=view_feedbacks_page' }
+      ];
+    }
+  }
+
+  // Function to check if a given link matches the current URL
+  c.isActive = function(link) {
+    return $location.absUrl().indexOf(link) !== -1;
+  };
+
+  // Function to handle navigation based on the selected section
+  c.navigate = function(section) {
+    switch (section) {
+      case 'view-feedback':
+        // Redirect based on the user's role
+        if (c.userRole === 'HR Lead') {
+          $window.location.href = '/feedback?id=cs_lead_feedback_page'; // HR Lead-specific page
+        } else {
+          $window.location.href = '/feedback?id=view_feedbacks_page'; // General view feedback page
+        }
+        break;
+      case 'switch-lead-view':
+        // Ensure the user has the 'switch-lead-view' option available
+        if (c.navOptions.some(option => option.action === 'switch-lead-view')) {
+          $window.location.href = '/feedback?id=homepage'; // Switch lead view page
+        } else {
+          $window.location.href = '/feedback?id=permission_denied'; // Permission denied if not allowed
+        }
+        break;
+      default:
+        console.error('Unknown section:', section);
+    }
+  };
+
+  // Initialize the navigation options on controller load
+  initializeNavOptions();
+};
