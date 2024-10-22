@@ -1,0 +1,38 @@
+var FeedbackForm = Class.create();
+FeedbackForm.prototype = Object.extendsObject(AbstractAjaxProcessor, {
+  
+  createFeedbackRecord: function() {
+    var startingFrom = this.getParameter('starting_from');
+    var endOn = this.getParameter('ends_on');
+    var teamLead = this.getParameter('team_lead_name');
+    var teamMember = this.getParameter('team_member_name');
+    var feedbackText = this.getParameter('feedback_text');
+    var comments = this.getParameter('comments');
+    var technicalKnowledge = this.getParameter('technical_knowledge');
+    var communication = this.getParameter('communication');
+    var teamwork = this.getParameter('teamwork');
+    var leadership = this.getParameter('leadership');
+    var commitment = this.getParameter('commitment');
+    var extraContribution = this.getParameter('extra_contribution');
+    var week = this.getParameter('week'); // New field
+
+    var gr = new GlideRecord('x_1462550_feedback_feedbacktable');
+    gr.initialize();
+    gr.starting_from = startingFrom;
+    gr.ends_on = endOn;
+    gr.team_lead_name = teamLead;
+    gr.team_member_name = teamMember;
+    gr.feedback_text = feedbackText;
+    gr.comments = comments;
+    gr.technical_knowledge = technicalKnowledge;
+    gr.communication = communication;
+    gr.teamwork = teamwork;
+    gr.leadership = leadership;
+    gr.commitment = commitment;
+    gr.extra_contribution = extraContribution;
+    gr.week = week; // Set week field
+    gr.insert();
+    
+    return gr.sys_id;
+  }
+});
