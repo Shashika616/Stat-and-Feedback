@@ -1,0 +1,104 @@
+/api/x_1462550_feedback/stat_api/totaltime/{team_member_name}/{week_start_date}/{week_end_date}
+
+
+(function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+    
+    // Initialize the response object
+    var res = {};
+    res.userInfo = {};
+    res.tasks = []; // Store aggregated task details with work types
+
+    // Get the logged-in user's sys_id
+    var userId = gs.getUserID();
+    gs.info("Logged-in User ID: " + userId);
+
+    // Create a GlideRecord object for the sys_user table
+    var userGr = new GlideRecord('sys_user');
+    
+    // Check if the record exists
+    if (userGr.get(userId)) {
+        // Populate the userInfo object with the necessary user fields
+        res.userInfo = {
+            sys_id: userGr.getValue('sys_id'),
+            name: userGr.getValue('name')
+        };
+        gs.info("User Info Retrieved: " + JSON.stringify(res.userInfo));
+    } else {
+        // Log an error if user record is not found
+        gs.error("User record not found for sys_id: " + userId);
+        response.setStatus(404);
+        return { error: "User not found" };
+    }
+
+    // Get URL parameters for filtering records
+    var teamMemberName = request.pathParams.team_member_name;  
+    var weekStartDate = request.pathParams.week_start_date;  
+    var weekEndDate = request.pathParams.week_end_date;  
+
+    gs.info("Query Parameters - Team Member Name: " + teamMemberName);
+    gs.info("Query Parameters - Week Start Date: " + weekStartDate);
+    gs.info("Query Parameters - Week End Date: " + weekEndDate);
+
+    // Check if the necessary parameters are provided
+    if (!teamMemberName || !weekStartDate || !weekEndDate) {
+        gs.error("Required parameters are missing.");
+        response.setStatus(400);
+        return { error: "Missing required parameters." };
+    }
+
+    // Step 2: Query the 'time_card' table to filter records for the selected team member
+    var timeCardGr = new GlideRecord('u_time_card');
+    //timeCardGr.addQuery('team_member_name', teamMemberName);
+    //timeCardGr.addQuery('date', '>=', weekStartDate);
+    //timeCardGr.addQuery('date', '<=', weekEndDate);
+    timeCardGr.query();
+
+    // Initialize an object to hold the aggregated task data
+    var taskAggregation = {};
+
+    // Loop through the time cards and aggregate task data
+    while (timeCardGr.next()) {
+        var taskName = timeCardGr.getValue('u_task'); // Assuming there's a field for task name
+        var analyzing = parseFloat(timeCardGr.getValue('u_analyzing')) || 0;
+        var settingUp = parseFloat(timeCardGr.getValue('u_setting_up')) || 0;
+        var reproducingDebugging = parseFloat(timeCardGr.getValue('u_re_producing_debugging')) || 0;
+        var providingSolutionAnswering = parseFloat(timeCardGr.getValue('u_providing_solution_or_answering')) || 0;
+
+        gs.info("Time Card Found - Task: " + taskName + ", Analyzing: " + analyzing + ", Setting Up: " + settingUp + ", Reproducing/Debugging: " + reproducingDebugging + ", Providing Solution/Answering: " + providingSolutionAnswering);
+
+        // Check if this task has already been added to the aggregation object
+        if (!taskAggregation[taskName]) {
+            // If not, initialize a new task entry
+            taskAggregation[taskName] = {
+                task: taskName,
+                analyzing: analyzing,
+                setting_up: settingUp,
+                reproducing_debugging: reproducingDebugging,
+                providing_solution_answering: providingSolutionAnswering
+            };
+        } else {
+            // If it exists, sum the values
+            taskAggregation[taskName].analyzing += analyzing;
+            taskAggregation[taskName].setting_up += settingUp;
+            taskAggregation[taskName].reproducing_debugging += reproducingDebugging;
+            taskAggregation[taskName].providing_solution_answering += providingSolutionAnswering;
+        }
+    }
+
+    // Convert the aggregated task data into an array and push it to the response
+    for (var aggregatedTask in taskAggregation) {
+        res.tasks.push(taskAggregation[aggregatedTask]);
+    }
+
+    // Log the tasks and their associated values
+    gs.info("Aggregated Tasks and Work Types: " + JSON.stringify(res.tasks));
+
+    // Convert the response object to a JSON string
+    var responseJSON = JSON.stringify(res);
+
+    // Set the response body with the user info and task details in JSON format
+    response.setStatus(200);
+    response.setHeader('Content-Type', 'application/json');
+    response.getStreamWriter().writeString(responseJSON);
+
+})(request, response);
