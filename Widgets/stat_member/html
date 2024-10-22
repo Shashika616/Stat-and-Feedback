@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Statistics Sidebar</title>
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Include your existing sidebar CSS here */
+  </style>
+</head>
+<body ng-controller="StatisticsController as c">
+  <!-- Sidebar container -->
+  <div id="statsSidebar" class="sidebar" ng-class="{ 'expanded': c.isExpanded }" ng-mouseenter="c.isExpanded = true" ng-mouseleave="c.isExpanded = false">
+    <ul>
+      <li>
+        <a href="#" ng-click="c.navigate('statistics')">
+          <i class="fas fa-chart-bar"></i>
+        <span ng-show="c.isExpanded">Stats : <strong> {{c.teamMemberName}} | {{c.weekStartDate}} - {{c.weekEndDate}}</strong></span>
+        </a>
+      </li>
+    </ul>
+
+    <!-- Container for charts, shown only when sidebar is expanded -->
+    <div class="charts-container" ng-show="c.isExpanded">
+      
+      <!-- Donut chart for priority counts -->
+    <!-- <div class="chart-item" ng-show="c.data.priorityCounts.length > 0">
+        <h4 ng-show="c.isExpanded">Acknowledged Incidents</h4> <!-- Title for the Donut chart --> 
+     <!--   <div class="canvas-wrapper">
+        <canvas id="donutChartPriority"></canvas>
+        </div>  
+      </div> -->
+
+      <!-- Bar chart for task totals -->
+      <div class="chart-container" ng-show="c.isExpanded">
+        <!-- Bar chart -->
+        <div class="chart-left">
+          <div class="chart-item" ng-show="c.data.tasks.length > 0">
+            <h4 ng-show="c.isExpanded">Total Time Reported</h4> <!-- Title for the Bar chart -->
+            <div class="canvas-wrapper">
+            <canvas id="barChartTasks"></canvas>
+            </div>  
+            <h5 ng-show="c.isExpanded">
+              No of unique cases : <strong>{{c.noOfTasks}}</strong>
+            </h5>
+          </div>
+        </div>
+        
+        <!-- Donut chart for task time breakdown (hidden until a bar is clicked) -->
+        <div class="chart-right" ng-class="{ 'active': c.isTaskSelected }">
+          <div class="chart-item" ng-show="c.isTaskSelected">
+            <h4 ng-show="c.isTaskSelected">
+    					Task Time Breakdown for {{c.task}} - 
+    					<strong>{{ (c.getTaskPriority(c.task).toUpperCase() || 'Query') }}</strong>
+						</h4>
+            <div class="canvas-wrapper">
+            <canvas id="donutChartTasks"></canvas>
+            </div>  
+          </div>
+        </div>
+         <!-- Bar chart -->
+      <!--  <div class="chart-left">
+          <div class="chart-item" ng-show="c.noOfTasks > 0">
+            <h4 ng-show="c.isExpanded">Tasks Count</h4> <!-- Title for the Bar chart -->
+       <!--     <div class="canvas-wrapper">
+            <canvas id="barChartTaskPriorities"></canvas>
+            </div>  
+          </div>
+        </div>-->
+      </div>
+    </div>
+  </div>
+</body>
+</html>
