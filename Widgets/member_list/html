@@ -1,0 +1,59 @@
+<div ng-controller="HomePageController as hp">
+  <h2>Team Members for <br><b>{{ hp.weekStartDate }} - {{ hp.weekEndDate }}</b></h2>
+  
+  
+  
+  <div class="team-member-list">
+    
+     <!-- Team Name Display -->
+  <div class="team-info">
+    <span class="team-name">{{ hp.teamName }}</span>
+  </div>
+    
+    <!-- Search filters -->
+    <div class="search-filters">
+      <!-- Year Picker -->
+      <select ng-model="hp.selectedYear" ng-change="hp.onYearChange()">
+        <option value="" disabled>Select Year</option>
+        <option ng-repeat="year in hp.years" value="{{ year }}">{{ year }}</option>
+      </select>
+
+      <!-- Month Picker -->
+      <select ng-model="hp.selectedMonth" ng-disabled="!hp.selectedYear" ng-change="hp.onMonthChange()">
+        <option value="" disabled>Select Month</option>
+        <option ng-repeat="month in hp.months" value="{{ $index + 1 }}">{{ month }}</option>
+      </select>
+
+      <!-- Week Picker -->
+      <select ng-model="hp.selectedWeek" ng-disabled="!hp.selectedMonth" ng-change="hp.onWeekChange()">
+        <option value="" disabled>Select Week</option>
+        <option ng-repeat="week in hp.weeks" value="{{ week.number }}">{{ week.label }}</option>
+      </select>
+    </div>
+    
+    <!-- Iterate over hp.filteredTeamMembers to display each team member -->
+    <div class="team-member" ng-repeat="member in hp.filteredTeamMembers" ng-animate="'animate'" >
+      <div class="team-member-container">
+        <span class="team-member-name">{{ member.name }}</span>
+        <button type="button" ng-click="hp.loadFeedbackPage(member.name)">Give Feedback</button>                        
+      </div>     
+    </div>
+    
+     <div class="logo-container" ng-if="hp.noMembers">
+  <div class="logo">
+    <div class="letter-o">
+      <svg class="heartbeat-line" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+        <!-- Adjusted polyline for a single heartbeat -->
+        <polyline class="heartbeat" points="0,50 50,50 70,20 100,80 130,50 150,50 200,50" />
+      </svg>
+    	</div>
+  	</div>
+	</div>
+    
+    <div class="no-feedbacks-message" ng-if="hp.noMembers">
+     ...{{hp.errorMessage}}...
+		</div>
+
+    
+  </div>
+</div>
