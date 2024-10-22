@@ -1,0 +1,186 @@
+<div ng-controller="FeedbackListController as fl" class="feedback-list-container" ng-class="{'page-enter': fl.entering, 'page-leave': fl.leaving}">
+  <h2>Feedbacks for {{ fl.teamMemberName }}</h2>
+  
+  <!-- Back Button -->
+  <button class="back-button" ng-click="fl.goBackToHome()">
+    <i class="fas fa-arrow-left"></i> Back
+  </button>
+
+  
+  <!-- Date Filter Controls -->
+  <div class="date-filter">
+    <label for="startDate">Start Date:</label>
+    <input type="date" id="startDate" ng-model="fl.filterStartDate" ng-change="fl.filterFeedbacks()">
+    <label for="endDate">End Date:</label>
+    <input type="date" id="endDate" ng-model="fl.filterEndDate" ng-change="fl.filterFeedbacks()">
+    <!-- Refresh Button -->
+  
+    <button ng-click="fl.refreshwidget()" class="refresh-button">Reset</button>
+  
+  </div>
+  
+ 
+  
+  <button ng-click="fl.createNewFeedback(fl.teamMemberName,fl.userInfo.name)" class="create-feedback-button">Create New Feedback</button>
+   
+  
+  <div id="feedback-list">
+  <div ng-repeat="feedback in fl.displayedFeedbacks track by $index" class="feedback-item">
+    <div class="feedback-details">
+      <p><strong>From:  {{ feedback.team_lead }}</strong></p>
+      <p><strong>Feedback Period:</strong> {{ feedback.period }}</p>
+      <p>
+        <strong>Status:</strong>
+        <span ng-class="{
+          'status-submitted': feedback.status === 'Submitted',
+          'status-pending': feedback.status === 'Pending'
+        }">
+          {{ feedback.status }}
+        </span>
+      </p>
+    </div>
+    
+    
+    <table class="feedback-details-table" ng-if="feedback.status === 'Submitted'">
+        <tr>
+          <th>Feedback Text</th>
+          <td>{{ feedback.feedbackText }}</td>
+        </tr>
+        <tr>
+          <th>Comments</th>
+          <td>
+            <div ng-if="feedback.comments && feedback.comments.length > 0">
+              <ul>
+                <li ng-repeat="comment in feedback.comments track by $index">
+                  {{ comment.date | date:'yyyy-MM-dd' }} : {{ comment.text }}
+                </li>
+              </ul>
+            </div>
+            <div ng-if="!feedback.comments || feedback.comments.length === 0">
+              No comments available.
+            </div>
+          </td>
+        </tr>
+      </table>
+
+    
+     <!-- Display feedback_form_when widget if status is Pending -->
+  <div ng-if="feedback.status === 'Pending'" >
+     <form>
+       
+         <!-- Feedback -->
+    <div class="form-group">
+      <label for="feedback"><strong>Feedback:</strong></label>
+      <textarea id="feedback" ng-model="fl.feedbackText" placeholder="Type your feedback here" required></textarea>
+    </div>
+   
+      <!-- Extra Contribution Rating -->
+     <div class="form-group">
+        <label><strong>Extra Contribution:</strong></label>
+        <textarea id="feedbackExtraContribution" ng-model="fl.extraContribution" placeholder="Type Extra Contribution here" ></textarea>
+    </div>
+		<div class="feedback-buttons">
+    <button type="button" ng-click="fl.showConfirmation(feedback)">Submit</button>
+       </div>  
+  </form>
+    
+    
+
+  </div>
+
+
+    
+  </div>
+    <div class="logo-container" ng-if="fl.totalItems === 0">
+  <div class="logo">
+    <div class="letter-o">
+      <svg class="heartbeat-line" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+        <!-- Adjusted polyline for a single heartbeat -->
+        <polyline class="heartbeat" points="0,50 50,50 70,20 100,80 130,50 150,50 200,50" />
+      </svg>
+    	</div>
+  	</div>
+	</div>
+
+
+
+</div>
+
+  
+  <!-- Pagination controls -->
+  <div class="pagination-controls">
+    <button ng-disabled="fl.currentPage === 1" ng-click="fl.changePage(fl.currentPage - 1)">Previous</button>
+    <span>Page {{ fl.currentPage }} of {{fl.noPages }}</span>
+    <button ng-disabled="fl.currentPage === Math.ceil(fl.totalItems / fl.itemsPerPage)" ng-click="fl.changePage(fl.currentPage + 1)">Next</button>
+  </div>
+  
+  <!-- Back to Top Button -->
+  <button id="backToTop" class="back-to-top" ng-click="fl.scrollToTop()" >
+   Back to top
+  </button>
+
+
+  <!-- Modal for detailed feedback report -->
+  <div class="modal" ng-show="fl.showModal">
+    <div class="modal-content">
+      <span class="close" ng-click="fl.closeModal()">&times;</span>
+      <h2>Feedback Details</h2>
+      <table class="feedback-details-table">
+        <tr>
+          <th>Feedback Period</th>
+          <td>{{ fl.selectedFeedback.period }}</td>
+        </tr>
+        <tr>
+          <th>Feedback Text</th>
+          <td>{{ fl.selectedFeedback.feedbackText }}</td>
+        </tr>
+        <!--<tr>
+          <th>Comments</th>
+          <td>
+            <div ng-if="fl.selectedFeedback.comments && fl.selectedFeedback.comments.length > 0">
+              <ul>
+                <li ng-repeat="comment in fl.selectedFeedback.comments track by $index">
+                  {{ comment.date | date:'yyyy-MM-dd ' }} : {{ comment.text }}
+                </li>
+              </ul>
+            </div>
+            <div ng-if="!fl.selectedFeedback.comments || fl.selectedFeedback.comments.length === 0">
+              No comments available.
+            </div>
+          </td>
+        </tr>-->
+         <tr>
+          <th>Extra Contribution</th>
+          <td>{{ fl.selectedFeedback.extra_contribution }}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  
+<!-- Error Modal -->
+<div class="error-modal" ng-show="fl.showErrorModal">
+  <div class="error-modal-content">
+    <span class="close" ng-click="fl.closeErrorModal()">&times;</span>
+    <div class="error-header">
+      <img src="x_1462550_feedback.Error%20icon.png" alt="Error Icon" class="error-icon" />
+    </div>
+    <h2 class="error-title">Error</h2>
+    <p>{{ fl.errorMessage }}</p>
+  </div>
+</div>
+
+
+  
+
+</div>
+
+ <!-- Confirmation Pop-up -->
+    <div class="confirmation-popup" ng-class="{ 'show': fl.showPopUp }">
+    <div class="popup-content">
+      <h3>Confirm Submission</h3>
+      <p><strong>Do you want to submit the feedback? </strong></p>
+      <button class="btn-confirm" ng-click="fl.confirmSubmit()">Yes</button>
+      <button class="btn-cancel" ng-click="fl.closePopUpModal()">No</button>
+    </div>
+  </div>
+
