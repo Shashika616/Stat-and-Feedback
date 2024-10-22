@@ -1,0 +1,85 @@
+(function() {
+  var teamMemberName = $sp.getParameter('team_member_name');
+  var action = $sp.getParameter('action');
+  var response = {};
+  
+  data.userInfo = {};
+  data.filteredTeamMembers = [];
+
+  // Get the logged-in user's sys_id
+  var userId = gs.getUserID();
+
+  // Create a GlideRecord object for the sys_user table
+  var userGr = new GlideRecord('sys_user');
+    
+  // Check if the record exists
+  if (userGr.get(userId)) {
+      // Populate the userInfo object with all relevant fields
+      data.userInfo = {
+          sys_id: userGr.getValue('sys_id'),
+          user_name: userGr.getValue('user_name'),
+          name: userGr.getValue('name'),
+          email: userGr.getValue('email'),
+          phone: userGr.getValue('phone'),
+          title: userGr.getValue('title'),
+          department: userGr.getValue('department'),
+          company: userGr.getValue('company'),
+          manager: userGr.getValue('manager'),
+          location: userGr.getValue('location')
+      };
+
+      gs.info("User Info: " + JSON.stringify(data.userInfo));
+  } else {
+      gs.error("User record not found for sys_id: " + userId);
+  }
+
+  function loadFeedbacks() {
+    var gr = new GlideRecord('x_1462550_feedback_feedbacktable');
+    gr.addQuery('team_member_name', data.userInfo.name); // Filter by logged-in user's name
+    gr.query();
+
+    var feedbacks = [];
+
+    while (gr.next()) {
+      var comments = gr.getValue('comments');
+      var formattedComments = [];
+
+      try {
+        var commentsArray = JSON.parse(comments) || [];
+
+        formattedComments = commentsArray.map(function(comment) {
+          return {
+            date: new GlideDateTime(comment.date).getDisplayValue(),
+            text: comment.text
+          };
+        });
+      } catch (error) {
+        gs.error('Error parsing comments JSON: ' + error.message);
+      }
+
+      feedbacks.push({
+        record_id: gr.getValue('record_id'),
+        starting_from: gr.getValue('starting_from'),
+        ends_on: gr.getValue('ends_on'),
+        date_created: gr.getValue('date_created'),
+        feedback_text: gr.getValue('feedback_text'),
+        technical_knowledge: gr.getValue('technical_knowledge'),
+        communication: gr.getValue('communication'),
+        teamwork: gr.getValue('teamwork'),
+        leadership: gr.getValue('leadership'),
+        commitment: gr.getValue('commitment'),
+        extra_contribution: gr.getValue('extra_contribution'),
+        submission_status: gr.getValue('submission_status'),
+        comments: formattedComments // Directly use formatted comments array
+      });
+    }
+
+    return feedbacks;
+  }
+
+  response.feedbacks = loadFeedbacks();
+
+  // Include user info in the response
+  data.userInfo = data.userInfo; 
+  data.response = response;
+})();
