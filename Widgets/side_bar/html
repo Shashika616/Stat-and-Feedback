@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Professional Sidebar</title>
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    .sidebar ul li.active a {
+      background-color: #FFA500; /* Highlight background color */
+      color: white; /* Change text color when active */
+    }
+    .sidebar ul li.active a i {
+      color: white; /* Change icon color when active */
+    }
+  </style>
+</head>
+<body ng-controller="SidebarController as c" >
+  <div id="sidebar" class="sidebar" ng-if="c.userRole === 'Lead'" >
+    <ul>
+      <li ng-class="{ 'active': c.isActive('/feedback?id=homepage') }" >
+        <a href="#" ng-click="c.navigate('switch-lead-view')">
+          <i class="fas fa-sync-alt"></i><span> Lead View</span>
+        </a>
+      </li>
+      <li ng-class="{ 'active': c.isActive('/feedback?id=view_feedbacks_page') }" >
+        <a href="#" ng-click="c.navigate('view-feedback')">
+          <i class="fas fa-eye"></i><span> View Feedback</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+</body>
+</html>
