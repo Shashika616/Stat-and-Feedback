@@ -1,0 +1,160 @@
+/* General styling for the sidebar */
+.sidebar {
+  width: 60px;
+  background-color: #ececec;
+  color: #333;
+  position: fixed;
+  top: 10%;
+  right: 0;
+  height: 18%;
+  padding: 20px 0;
+  border-radius: 15px 0 0 15px;
+  box-shadow: -5px 0 5px rgba(0, 0, 0, 0.3);
+  transition: width 0.5s ease, height 0.5s ease;
+  z-index: 1000;
+  overflow: hidden;
+  outline: none;
+}
+
+.sidebar:hover,
+.sidebar:focus-within {
+  width: 80vw;
+  height: 90vh;
+  background-color: rgba(238, 243, 243, 0.9); /* Adds slight warmth with good readability */
+}
+
+.sidebar ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar ul li {
+  margin: 10px 0;
+}
+
+.sidebar ul li a {
+  color: #FF6700;
+  text-decoration: none !important;
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-radius: 4px;
+  transition: background-color 0.5s ease;
+}
+
+.sidebar ul li a i {
+  font-size: 28px;
+  color: #FF6700;
+  text-align: center;
+}
+
+.sidebar ul li a span {
+  display: none;
+}
+
+.sidebar:hover ul li a span {
+  display: inline-block;
+  color: #FF6700;
+  font-size: 36px;
+  margin-left: 20px;
+}
+
+.sidebar ul li a:hover {
+  background-color: #241611;
+  color: #fff;
+}
+
+/* Layout for charts */
+.charts-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: 20px;
+  width: 100%;
+  height: calc(90vh - 150px); /* Adjust height based on sidebar hover */
+  overflow-y: auto; /* Enable vertical scrollbar */
+}
+
+.chart-item {
+  width: 100%;
+  max-width: 250px; /* Reduced max-width for smaller charts */
+  text-align: center;
+  margin-bottom: 80px; /* Increased margin-bottom to add more space between charts */
+}
+
+.chart-item .canvas-wrapper {
+  display: flex;
+  padding: 10px; /* Add padding around the canvas */
+  //background-color: #fff; /* Optional: background color for better visibility */
+  border-radius: 8px; /* Optional: rounded corners for the wrapper */
+  margin-bottom: 20px; /* Add margin to create space between wrappers */
+}
+
+.chart-item canvas {
+  width: 100% !important;
+  height: 100% !important; /* Allow chart to scale responsively */
+}
+
+/* Task donut chart position when bar is selected */
+.chart-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex-wrap: wrap; /* Ensure flex items wrap if space is limited */
+}
+
+.chart-left,
+.chart-right {
+  flex: 1 1 100%; /* Take up 100% width on smaller screens */
+  max-width: 250px; /* Reduced max-width to make charts smaller */
+  max-height: 200px; /* Set a maximum height for charts */
+  margin-bottom: 80px; /* Increased margin to separate the charts */
+}
+
+.chart-right.active {
+  display: block;
+}
+
+/* Chart canvas styling */
+canvas {
+  width: 100% !important;
+  height: auto !important;
+  max-height: 200px; /* Set a maximum height to prevent overflow */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 50px;
+    height: 10%;
+  }
+
+  .sidebar:hover,
+  .sidebar:focus-within {
+    width: 75vw;
+    height: 85vh;
+  }
+
+  .sidebar ul li a i {
+    font-size: 24px;
+  }
+
+  .sidebar ul li a span {
+    font-size: 28px;
+  }
+
+  .chart-item {
+    max-width: 200px; /* Further reduce chart size on smaller screens */
+    margin-bottom: 60px; /* Increased margin-bottom for better spacing */
+  }
+
+  .chart-left,
+  .chart-right {
+    max-width: 200px; /* Further reduce max-width for charts */
+    max-height: 150px; /* Further reduce max-height for charts */
+    margin-bottom: 60px; /* Increased margin-bottom for better spacing */
+  }
+}
