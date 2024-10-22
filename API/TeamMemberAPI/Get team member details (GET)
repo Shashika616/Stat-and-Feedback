@@ -1,0 +1,37 @@
+/api/x_1462550_feedback/teammember_api/team_member_details
+
+
+(function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+    // Get the team_member_name parameter from the request
+    var teamMemberName = request.queryParams.team_member_name;
+
+    // Validate the input
+    if (!teamMemberName) {
+        response.setStatus(400);
+        response.setBody({ error: 'team_member_name parameter is required' });
+        return;
+    }
+
+    // Create a GlideRecord object for the team members table
+    var gr = new GlideRecord('x_1462550_feedback_team_members');
+    gr.addQuery('team_member_name', teamMemberName);
+    gr.query();
+
+    var teamMembers = [];
+
+    // Iterate over the results and format them
+    while (gr.next()) {
+        teamMembers.push({
+            team_member_name: gr.getValue('team_member_name') || '',
+            team_lead_name: gr.getValue('team_lead_name') || 'Unknown'
+        });
+    }
+
+    // Convert the array of team member records to a JSON string
+    var teamMemberJSON = JSON.stringify(teamMembers);
+
+    // Set the response body with the team member records in JSON format
+    response.setStatus(200);
+    response.setHeader('Content-Type', 'application/json');
+    response.getStreamWriter().writeString(teamMemberJSON);
+})(request, response);
