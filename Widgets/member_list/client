@@ -1,0 +1,370 @@
+api.controller = function($scope, $window, $http) {
+    var hp = this;
+
+    // Initialize data
+    hp.userInfo = $scope.data.userInfo;
+    hp.filteredTeamMembers = []; 
+		hp.allTeamMembers = angular.copy($scope.data.filteredTeamMembers);
+    hp.weekStartDate = '';
+    hp.weekEndDate = '';
+    hp.selectedWeek = null; // Initialize selectedWeek
+    hp.weeks = ''; // Initialize weeks
+    hp.years = Array.from({ length: 11 }, (v, i) => new Date().getFullYear() - i); // Years from current year back 10 years
+    hp.months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+		hp.month = '';
+	
+	
+		hp.userRoleHistory = [];
+		hp.teamName = '';
+		hp.noMembers = false;
+	
+		hp.paraweekstart = getUrlParameter('week_start_date') || '';
+		hp.paraweekend = getUrlParameter('week_end_date') || '';
+		console.log('URL week start : ', hp.paraweekstart);
+		console.log('URL week end : ', hp.paraweekend);
+
+	console.log('All members : ',$scope.data.filteredTeamMembers);
+	
+	 // Format dates as yyyy-MM-dd
+    function formatDate(date) {
+        if (!date || !(date instanceof Date)) {
+            console.error('Invalid date provided:', date);
+            return '';
+        }
+        var year = date.getFullYear();
+        var month = ('0' + (date.getMonth() + 1)).slice(-2); // Add leading zero
+        var day = ('0' + date.getDate()).slice(-2); // Add leading zero
+        return year + '-' + month + '-' + day;
+    }
+	hp.initialize = function() {
+    // Check if URL parameters exist
+    if (hp.paraweekstart && hp.paraweekend) {
+        // Use URL parameters for week dates
+        hp.weekStartDate = hp.paraweekstart;
+        hp.weekEndDate = hp.paraweekend;
+
+        console.log('Using URL parameters for week start and end:', hp.weekStartDate, hp.weekEndDate);
+
+        // Set the year and month based on the week start date from the URL
+        var weekStartDateObj = new Date(hp.weekStartDate);
+        hp.selectedYear = weekStartDateObj.getFullYear().toString();
+        hp.selectedMonth = (weekStartDateObj.getMonth() + 1).toString(); // JavaScript months are 0-based
+
+        // Set the year and month based on the week start date from the URL
+        hp.selectedYear = weekStartDateObj.getFullYear().toString();
+        hp.selectedMonth = (weekStartDateObj.getMonth() + 1).toString(); // JavaScript months are 0-based
+
+        console.log('Selected Year (from URL):', hp.selectedYear);
+        console.log('Selected Month (from URL):', hp.selectedMonth);
+			
+        // Populate the weeks for the selected year and month
+        hp.populateWeeks();
+
+        // After populating the weeks, find the appropriate week number
+        var selectedWeekNumber = hp.getWeekNumberFromDate(weekStartDateObj);
+        hp.selectedWeek = selectedWeekNumber ? selectedWeekNumber.toString() : null;
+
+        console.log('Selected Week Number (from URL):', hp.selectedWeek);
+
+        // Call the filtering function
+        hp.filterTeamMembersByWeek();
+    } else {
+        // URL parameters are not present, fallback to the current week
+
+        // Calculate the current week's Monday and Sunday dates
+        var today = new Date();
+        var dayOfWeek = today.getDay();
+        var diffToMonday = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Adjust for Sunday
+        var monday = new Date(today.setDate(diffToMonday));
+        var sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+
+        // Pre-fill with the current year, month, and week
+        hp.selectedYear = today.getFullYear().toString();
+        hp.selectedMonth = (today.getMonth() + 1).toString();
+
+        console.log('Current Year (String):', hp.selectedYear);
+        console.log('Current Month (String):', hp.selectedMonth);
+
+        // Populate weeks for the selected year and month
+        hp.populateWeeks();
+
+        // Calculate the current week number using the populated weeks
+        var selectedWeekDate = hp.getWeekNumberFromDate(today);
+        hp.selectedWeek = selectedWeekDate ? selectedWeekDate.toString() : null;
+        console.log('Current Week (String):', hp.selectedWeek);
+
+        // Set the week start and end dates
+        hp.weekStartDate = formatDate(monday);
+        hp.weekEndDate = formatDate(sunday);
+
+        // Call the filtering function
+        hp.filterTeamMembersByWeek();
+    }
+
+    // Load the user role history 
+    $http.get('/api/x_1462550_feedback/logged_in_user_role/userRole').then(function(response) {
+        if (response.data && response.data.length > 0) {
+            hp.userRoleHistory = response.data;
+            console.log('User role history loaded:', hp.userRoleHistory);
+
+            // Filter the team members after loading the role history
+            hp.filterTeamMembersByWeek();
+        } else {
+            console.log('No role history found for the logged-in user.');
+        }
+    }, function(error) {
+        alert('Error loading user role history');
+        console.error('Error in loadUserRoleHistory:', error);
+    });
+};
+
+	
+				// Function to get URL parameter
+		function getUrlParameter(name) {
+				var regex = new RegExp('[?&]' + name + '=([^&#]*)');
+				var results = regex.exec($window.location.href); // Use $window.location.href to include the full URL
+				return results ? decodeURIComponent(results[1].replace(/\+/g, ' ')) : '';
+		}
+
+	
+	
+	
+   
+	
+// Function to calculate the Monday and Sunday of a specific week number
+function getWeekDates(year, month, weekNumber) {
+    var startOfMonth = new Date(year, month - 1, 1); // Convert month to 0-based index
+    var endOfMonth = new Date(year, month, 0); // Last day of the month
+
+    // Find the first Monday of the month
+    var firstMonday = getMondayOfWeek(startOfMonth);
+
+    // Calculate the start date of the selected week
+    var weekStartDate = new Date(firstMonday);
+    weekStartDate.setDate(firstMonday.getDate() + (weekNumber - 1) * 7);
+
+    // Calculate the end date of the selected week
+    var weekEndDate = new Date(weekStartDate);
+    weekEndDate.setDate(weekStartDate.getDate() + 6);
+
+    // Adjust end date if it goes beyond the end of the month
+    //if (weekEndDate > endOfMonth) {
+       // weekEndDate = endOfMonth;
+    //}
+
+    return {
+        monday: weekStartDate,
+        sunday: weekEndDate
+    };
+}
+
+
+	// Function to filter team members based on the selected week and user role history
+hp.filterTeamMembersByWeek = function() {
+    var weekDates, weekStartDate, weekEndDate;
+
+    // Case when a specific week is selected
+    if (hp.selectedWeek && hp.selectedYear && hp.selectedMonth) {
+        var selectedWeek = hp.selectedWeek;
+        var selectedYear = hp.selectedYear;
+        var selectedMonth = hp.selectedMonth;
+        var selectedWeekNumber = selectedWeek;
+
+        console.log('Selected Year:', selectedYear);
+        console.log('Selected Month:', selectedMonth);
+        console.log('Selected Week Number:', selectedWeekNumber);
+
+        // Calculate Monday and Sunday of the selected week
+        weekDates = getWeekDates(selectedYear, selectedMonth, selectedWeekNumber);
+        weekStartDate = formatDate(weekDates.monday); // Format as YYYY-MM-DD
+        weekEndDate = formatDate(weekDates.sunday); // Format as YYYY-MM-DD
+        hp.weekStartDate = weekStartDate;
+        hp.weekEndDate = weekEndDate;
+    } else {
+        // Case when no week is selected
+        if (hp.paraweekstart && hp.paraweekend) {
+            // If URL parameters have values, use them
+            weekStartDate = hp.paraweekstart;
+            weekEndDate = hp.paraweekend;
+            hp.weekStartDate = weekStartDate;
+            hp.weekEndDate = weekEndDate;
+            console.log('Using URL parameters for week dates:', weekStartDate, 'to', weekEndDate);
+        } else {
+            // If no week is selected and no URL parameters, use the current week's Monday and Sunday
+            weekStartDate = hp.weekStartDate; // This is the current week's Monday
+            weekEndDate = hp.weekEndDate; // This is the current week's Sunday
+            console.log('Using current week dates:', weekStartDate, 'to', weekEndDate);
+        }
+    }
+
+    // Check if the user's role history contains the current or selected week's dates
+    var currentWeekStartDate = new Date(hp.weekStartDate);
+    var currentWeekEndDate = new Date(hp.weekEndDate);
+
+    var roleExists = hp.userRoleHistory.find(function(role) {
+				console.log('Role: ',role);
+        var roleStartDate = new Date(role.start);
+        var roleEndDate = role.end ? new Date(role.end) : currentWeekEndDate; // If end_date is null, use current week's Sunday
+
+        // Check if the weekStartDate and weekEndDate fall between the start and end dates of the role
+        return (currentWeekStartDate >= roleStartDate && currentWeekEndDate <= roleEndDate);
+    });
+
+	console.log('roleExists : ',roleExists);
+	
+    if (roleExists) {  
+        // If the role exists, proceed with filtering team members
+        var selectedTeam = roleExists.team.name;
+        var userRole = roleExists.role;
+        hp.teamName = selectedTeam;
+        console.log('Team for the week:', selectedTeam, 'Role:', userRole);
+
+						 if (userRole === 'Lead') {
+						// If the role is 'Lead', proceed with filtering team members
+						hp.filteredTeamMembers = hp.allTeamMembers.filter(function(member) {
+								var memberStartDate = member.start;
+								var memberEndDate = member.end ? new Date(member.end) : formatDate(currentWeekEndDate);
+								var memberTeam = member.team;
+								console.log('Filter: Start:', memberStartDate, 'End:', memberEndDate, 'Team:', memberTeam);
+								hp.noMembers = false;
+								console.log('WeekStartDate:', weekStartDate, 'WeekEndDate:', weekEndDate);
+								return (memberEndDate > weekStartDate && memberStartDate < weekEndDate && memberTeam === selectedTeam);
+						});
+
+						// Check if any team members were found
+						if (hp.filteredTeamMembers.length === 0) {
+								hp.noMembers = true; // Set flag to show no members error
+								console.error('No team members found for the selected team and week.');
+								hp.errorMessage = 'No team members found for the selected team and week.';
+						} else {
+								hp.noMembers = false; // Reset the noMembers flag if members are found
+								hp.errorMessage = ''; // Clear any previous error message
+						}
+
+						
+						console.log('Access granted to lead page.');
+						
+
+				} else {
+						// If the role is not 'Lead', set the error message
+						hp.noMembers = true;
+						hp.errorMessage = 'Not a lead'; // Set error message to "Not a lead"
+						hp.filteredTeamMembers = []; // Clear any previous filtered members
+						console.log('User is not a lead.');
+				}
+		} else {
+				// If no matching role found, handle it
+				hp.noMembers = true;
+				hp.errorMessage = 'No matching role found for the selected week.';
+				hp.filteredTeamMembers = [];
+				console.log('No role found for the current or selected week:', weekStartDate, 'to', weekEndDate);
+		}
+
+		console.log("Filtered Team Members:", hp.filteredTeamMembers); // Debugging
+};
+
+
+	
+
+    
+
+   // Function to load feedback page for the selected team member and include week dates in the URL
+hp.loadFeedbackPage = function(teamMemberName) {
+    if (teamMemberName) {
+        // Construct the URL with weekStartDate and weekEndDate as query parameters
+        var feedbackPageUrl = '/feedback?id=feedback_page_one'  + '&team_member_name=' + encodeURIComponent(teamMemberName)+ '&week_start_date=' + encodeURIComponent(hp.weekStartDate)+ '&week_end_date=' + encodeURIComponent(hp.weekEndDate);
+
+        // Navigate to the feedback page
+        $window.location.href = feedbackPageUrl;
+    } else {
+        alert('Invalid team member selected.');
+    }
+};
+
+
+    // Initialize and handle changes
+    hp.onYearChange = function() {
+				hp.selectedWeek = null;
+        hp.populateWeeks();
+    };
+
+    hp.onMonthChange = function() {
+				hp.selectedWeek = null;
+        hp.populateWeeks();
+    };
+
+    hp.onWeekChange = function() {
+        // Handle week change and filter team members
+        hp.filterTeamMembersByWeek();
+    };
+
+    hp.populateWeeks = function() {
+        if (hp.selectedYear && hp.selectedMonth) {
+            var year = hp.selectedYear;
+            var month = hp.selectedMonth - 1; // JavaScript months are 0-based
+            var startOfMonth = new Date(year, month, 1);
+            var endOfMonth = new Date(year, month + 1, 0);
+
+            hp.weeks = [];
+            var startDate = getMondayOfWeek(startOfMonth);
+            var endDate = getSundayOfWeek(endOfMonth);
+
+            while (startDate <= endDate) {
+                var weekStart = new Date(startDate);
+                var weekEnd = new Date(startDate);
+                weekEnd.setDate(weekStart.getDate() + 6);
+
+               if (weekEnd > endDate) {
+    weekEnd = endDate;
+}
+
+								if (weekEnd >= startOfMonth || weekStart <= endOfMonth) {
+										hp.weeks.push({
+												number: hp.weeks.length + 1,
+												label: 'Week ' + (hp.weeks.length + 1) + ' (' + formatDate(weekStart) + ' - ' + formatDate(weekEnd) + ')',
+												startDate: formatDate(weekStart),
+												endDate: formatDate(weekEnd)
+										});
+								}
+
+
+                startDate.setDate(startDate.getDate() + 7);
+            }
+        }
+    };
+
+    function getMondayOfWeek(date) {
+        var dayOfWeek = date.getDay();
+        var diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // Adjust for Sunday
+        var monday = new Date(date);
+        monday.setDate(date.getDate() + diffToMonday);
+        return monday;
+    }
+
+    function getSundayOfWeek(date) {
+        var dayOfWeek = date.getDay();
+        var diffToSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek; // Adjust for other days of the week
+        var sunday = new Date(date);
+        sunday.setDate(date.getDate() + diffToSunday);
+        return sunday;
+    }
+	
+			hp.getWeekNumberFromDate = function(date) {
+				var formattedDate = formatDate(date); // Format the date in 'YYYY-MM-DD'
+
+				// Loop through the weeks to find which week the date belongs to
+				for (var i = 0; i < hp.weeks.length; i++) {
+						var week = hp.weeks[i];
+						if (formattedDate >= week.startDate && formattedDate <= week.endDate) {
+								return week.number; // Return the week number
+						}
+				}
+
+				return null; // Return null if no matching week is found
+		};
+
+	
+	hp.initialize();
+	
+};
