@@ -1,0 +1,421 @@
+api.controller = function($scope, $http, $window) {
+  var c = this;
+  c.showModal = false;
+	c.recordID = '';
+	c.sysID = '';
+  c.comments = [];
+  c.startingFrom = '';
+  c.endOn = '';
+  c.teamLead = '';
+  c.teamMember = '';
+  c.feedbackText = '';
+  c.newComment = '';
+  c.technicalKnowledge = '';
+  c.communication = '';
+  c.teamwork = '';
+  c.leadership = '';
+  c.commitment = '';
+  c.extraContribution = '';
+  c.feedbackRecordSysId = '';
+  c.week = ''; // Field for week
+	c.weekStart = '';
+	c.weekEnd = '';
+	c.userInfo = '';
+	
+	// Function to load user information
+		function loadUserInfo() {
+				$http.get('/api/x_1462550_feedback/logged_user/userinfo')
+				.then(function(response) {
+						if (response.data) {
+								c.userInfo = response.data; // Assign the entire response data to c.userInfo
+								console.log('User Information loaded:', c.userInfo); // Print the loaded user information
+						} else {
+								console.error('No user information found in response');
+						}
+				}, function(error) {
+						console.error('Error loading user information:', error);
+				});
+		}
+
+	// Load the user role history 
+	$http.get('/api/x_1462550_feedback/logged_in_user_role/userRole').then(function(response) {
+    if (response.data && response.data.length > 0) {
+        c.userRoleHistory = response.data;
+        console.log('User role history loaded:', c.userRoleHistory);
+        
+        // Retrieve the current week start and end dates from the URL or set them to empty strings if not present
+        c.currentWeekStartDate = getUrlParameter('week_start_date') || '';
+        c.currentWeekEndDate = getUrlParameter('week_end_date') || '';
+        console.log('URL week start : ', c.currentWeekStartDate);
+        console.log('URL week end : ', c.currentWeekEndDate);
+        
+        // Convert the current week start and end dates to Date objects
+        var currentWeekStartDateObj = new Date(c.currentWeekStartDate);
+        var currentWeekEndDateObj = new Date(c.currentWeekEndDate);
+
+        // Check if any role in the userRoleHistory matches the current week
+         		c.roleExists = c.userRoleHistory.find(function(role) {
+            var roleStartDate = new Date(role.start);
+            var roleEndDate = role.end ? new Date(role.end) : currentWeekEndDateObj; // If end_date is null, use current week's Sunday
+            
+            console.log('Checking role: ', role);
+            console.log('Role start date: ', roleStartDate);
+            console.log('Role end date: ', roleEndDate);
+
+            // Check if the current week falls within the start and end dates of the role
+            return (currentWeekStartDateObj >= roleStartDate && currentWeekEndDateObj <= roleEndDate);
+        });
+
+        console.log('roleExists : ', c.roleExists);
+
+    } else {
+        console.log('No role history found for the logged-in user.');
+    }
+	}, function(error) {
+			alert('Error loading user role history');
+			console.error('Error in loadUserRoleHistory:', error);
+});
+
+
+
+
+
+	
+
+  // Function to initialize the form
+  function initialize() {
+     c.recordID = getUrlParameter('sys_id');
+		console.log('recordID : ', c.recordID);
+    if (c.recordID) {
+      //c.feedbackRecordSysId = decryptSysId(encryptedSysId);
+      console.log('Record ID:', c.recordID);
+      loadFeedbackRecord(c.recordID);
+    } else {
+      var teamMemberName = getUrlParameter('team_member_name');
+      console.log('Initializing form with teamMemberName:', teamMemberName);
+      if (teamMemberName) {
+        $http.get('/api/now/table/x_1462550_feedback_team_members', {
+          params: { team_member_name: teamMemberName }
+        }).then(function(response) {
+          console.log('API response for GET request:', response);
+          if (response.data.result && response.data.result.length > 0) {
+            var feedbackRecord = response.data.result[0];
+            console.log('Team member found:', feedbackRecord);
+            // Fetch team lead and team member names based on their sys_id
+            loadUserDetails(feedbackRecord.team_lead_name).then(function(name) {
+                c.teamLead = name;
+                console.log('Team Lead Name:', c.teamLead);
+            });
+
+            loadUserDetails(feedbackRecord.team_member_name).then(function(name) {
+                c.teamMember = name;
+                console.log('Team Member Name:', c.teamMember);
+            });
+            console.log('Form initialized with feedback record:', feedbackRecord);
+          } else {
+            alert('No feedback found for the given team member.');
+            console.log('No feedback found for team member:', teamMemberName);
+          }
+        }, function(error) {
+          alert('Error loading feedback');
+          console.error('Error in loadFeedback:', error);
+        });
+      } else {
+        alert('Invalid team member.');
+        console.log('Invalid team member name:', teamMemberName);
+      }
+    }
+  }
+  
+  // Function to decrypt sys_id
+  function decryptSysId(encryptedSysId) {
+    return atob(encryptedSysId); // Basic decryption using Base64 
+  }
+	
+	// Function to load user details by sys_id
+		function loadUserDetails(sysId) {
+				return $http.get('/api/now/table/sys_user/' + sysId)
+						.then(function(response) {
+								if (response.data.result) {
+										return response.data.result.name; // Return the user name
+								} else {
+										console.error('User not found for sys_id:', sysId);
+										return '';
+								}
+						}, function(error) {
+								console.error('Error fetching user details for sys_id:', sysId, error);
+								return '';
+						});
+		}
+
+
+ // Function to load feedback record based on record_id
+	function loadFeedbackRecord(recordId) {
+    $http.get('/api/x_1462550_feedback/feedbackapi/feedback/' + recordId).then(function(response) {
+        var feedbackRecord = response.data;
+				console.log('Feedback record :', feedbackRecord);
+        if (feedbackRecord) {
+            c.startingFrom = new Date(feedbackRecord.starting_from);
+						c.weekStart = feedbackRecord.starting_from;
+            c.endOn = new Date(feedbackRecord.ends_on);
+						c.weekEnd = feedbackRecord.ends_on;
+             // Fetch team lead and team member names based on their sys_id
+            loadUserDetails(feedbackRecord.team_lead_name).then(function(name) {
+                c.teamLead = name;
+                console.log('Team Lead Name:', c.teamLead);
+            });
+
+            loadUserDetails(feedbackRecord.team_member_name).then(function(name) {
+                c.teamMember = name;
+                console.log('Team Member Name:', c.teamMember);
+            });
+            c.feedbackText = feedbackRecord.feedback_text;
+            try {
+                c.comments = JSON.parse(feedbackRecord.comments || '[]');
+            } catch (e) {
+                console.error('Error parsing comments JSON:', e);
+                c.comments = [];
+            }
+            c.technicalKnowledge = feedbackRecord.technical_knowledge;
+            c.communication = feedbackRecord.communication;
+            c.teamwork = feedbackRecord.teamwork;
+            c.leadership = feedbackRecord.leadership;
+            c.commitment = feedbackRecord.commitment;
+            c.extraContribution = feedbackRecord.extra_contribution;
+            c.week = feedbackRecord.week;
+            console.log('Loaded feedback record:', feedbackRecord);
+						console.log('Team Member :',c.teamMember);
+        } else {
+            alert('Feedback record not found.');
+            console.log('Feedback record not found for record_id:', recordId);
+        }
+    }, function(error) {
+        alert('Error loading feedback record');
+        console.error('Error in loadFeedbackRecord:', error);
+    });
+}
+
+
+  // Function to get the week of the month
+  function getWeekOfMonth(date) {
+    var d = new Date(date);
+    var firstDayOfMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+    var firstDayWeekDay = firstDayOfMonth.getDay();
+    var dayOfMonth = d.getDate();
+    var weekOfMonth = Math.ceil((dayOfMonth + firstDayWeekDay) / 7);
+    return 'Week ' + weekOfMonth;
+  }
+
+  // Function to update the week field based on the startingFrom date
+  c.updateWeek = function() {
+    if (c.startingFrom) {
+      c.week = getWeekOfMonth(c.startingFrom);
+    } else {
+      c.week = '';
+    }
+  };
+
+  // Function to format the date manually as yyyy-mm-dd
+  function formatDate(date) {
+    var d = new Date(date);
+    var month = '' + (d.getMonth() + 1);
+    var day = '' + d.getDate();
+    var year = d.getFullYear();
+
+    if (month.length < 2) month = '0' + month;
+    if (day.length < 2) day = '0' + day;
+
+    return [year, month, day].join('-');
+  }
+
+  // Function to show the confirmation modal
+  c.showConfirmation = function() {
+    if (c.startingFrom && c.endOn && c.teamMember && c.feedbackText) {
+      c.showModal = true;
+			document.querySelector('.confirmation-popup').classList.add('show');
+    } else {
+      alert('Please enter all required fields.');
+    }
+  };
+
+  // Function to close the modal without submitting
+  c.closeModal = function() {
+     document.querySelector('.confirmation-popup').classList.remove('show');
+        $timeout(function() {
+            c.showModal = false;
+        }, 300); // Delay to allow the transition to complete
+  };
+
+  // Function to confirm and submit the form
+  c.confirmSubmit = function() {
+    c.showModal = false;
+    c.submitForm();
+  };
+
+ // Function to submit the form
+c.submitForm = function() {
+    if (c.startingFrom && c.endOn && c.teamLead && c.teamMember && c.feedbackText) {
+        var data = {
+            starting_from: formatDate(c.startingFrom),
+            ends_on: formatDate(c.endOn),
+            team_lead_name: c.teamLead,
+            team_member_name: c.teamMember,
+            feedback_text: c.feedbackText,
+            //comments: JSON.stringify(c.comments),
+            technical_knowledge: c.technicalKnowledge,
+            communication: c.communication,
+            teamwork: c.teamwork,
+            leadership: c.leadership,
+            commitment: c.commitment,
+            extra_contribution: c.extraContribution,
+            submission_status: true
+        };
+
+        // First, check if a record with the given recordID exists
+        $http.get('/api/x_1462550_feedback/feedbackapi/feedback/' + c.recordID).then(function(response) {
+            var feedbackRecord = response.data;
+            console.log('Feedback loaded to check : ', feedbackRecord);
+            if (feedbackRecord) {
+                // Update existing record
+                $http.patch('/api/x_1462550_feedback/feedbackapi/update_feedback/' + c.recordID, data).then(function(response) {
+                    alert('Feedback updated successfully!');
+                    c.resetForm();
+                }, function(error) {
+                    alert('Error updating feedback');
+                    console.error('Error in submitForm (PATCH):', error);
+                });
+            } else {
+                // Create new record
+                data.record_id = c.recordID; // Make sure to include recordID in new record data
+                $http.post('/api/now/table/x_1462550_feedback_feedbacktable', data).then(function(response) {
+                    alert('Feedback submitted successfully!');
+                    c.resetForm();
+									
+                }, function(error) {
+                    alert('Error submitting feedback');
+                    console.error('Error in submitForm (POST):', error);
+                });
+            }
+        }, function(error) {
+            alert('Error retrieving feedback record');
+            console.error('Error in submitForm (GET):', error);
+        });
+    } else {
+        alert('Please enter all required fields.');
+    }
+};
+  // Function to reset the form
+  c.resetForm = function() {
+    c.startingFrom = '';
+    c.endOn = '';
+    c.teamLead = '';
+    //c.teamMember = '';
+    c.feedbackText = '';
+    c.comments = [];
+    c.technicalKnowledge = 1;
+    c.communication = 1;
+    c.teamwork = 1;
+    c.leadership = 1;
+    c.commitment = 1;
+    c.extraContribution = 1;
+    c.feedbackRecordSysId = '';
+    c.week = ''; // Reset week field
+
+    initialize();
+		var homepageUrl = '';
+		console.log('Taken user roles : ',c.userInfo.roles);
+
+		// Check for HR Lead role
+				if (c.userInfo.roles.includes('x_1462550_feedback.HR Lead')) {
+						homepageUrl = '/feedback?id=feedback_page_two&team_member_name=' + encodeURIComponent(c.teamMember) + 
+													'&week_start_date=' + encodeURIComponent(c.weekStart) + 
+													'&week_end_date=' + encodeURIComponent(c.weekEnd);
+				}
+				// Check for Team Lead role
+				else if (c.userInfo.roles.includes('x_1462550_feedback.team lead')) {
+						homepageUrl = '/feedback?id=feedback_page_one&team_member_name=' + encodeURIComponent(c.teamMember) + 
+													'&week_start_date=' + encodeURIComponent(c.weekStart) + 
+													'&week_end_date=' + encodeURIComponent(c.weekEnd);
+				} else {
+						// Default redirection to the homepage if the user has neither role
+						homepageUrl = '/feedback?id=homepage&week_start_date=' + encodeURIComponent(c.weekStart) + 
+													'&week_end_date=' + encodeURIComponent(c.weekEnd);
+				}
+
+				// Redirect to the appropriate URL
+				$window.location.href = homepageUrl;
+
+  };
+
+  // Function to set the rating
+  c.setRating = function(field, rating) {
+    c[field] = rating;
+  };
+
+  // Helper function to get URL parameter
+  function getUrlParameter(name) {
+    var regex = new RegExp('[?&]' + name + '=([^&#]*)');
+    var results = regex.exec($window.location.search);
+    return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+  }
+
+  // Watch for changes to the startingFrom field and update the week accordingly
+  $scope.$watch('c.startingFrom', function(newVal, oldVal) {
+    if (newVal !== oldVal) {
+      c.updateWeek();
+    }
+  });
+	
+			// Function to show the alert
+		c.showAlertMessage = function(message) {
+			c.alertMessage = message;
+			c.showAlert = true;
+
+			// Automatically hide the alert after 3 seconds
+			setTimeout(function() {
+				c.closeAlert();
+			}, 3000); // Adjust the time as needed
+		};
+
+		// Function to close the alert
+		c.closeAlert = function() {
+			c.showAlert = false; // Set to false to hide the alert
+
+			// Add a small delay before setting showAlert to false
+			setTimeout(function() {
+				c.showAlert = false; // Set to false to hide the alert after fading out
+			}, 300); // Adjust to match the transition duration
+		};
+	
+	// Function to redirect to the appropriate page based on user role
+		c.goBackToHome = function(memberName) {
+				var startDate = c.weekStart;
+				var endDate = c.weekEnd;
+				var homepageUrl = '';
+				console.log('Taken user roles : ',c.userInfo.roles);
+
+				// Check for HR Lead role
+				if (c.roleExists.role === 'HR Lead') {
+						homepageUrl = '/feedback?id=feedback_page_two&team_member_name=' + encodeURIComponent(c.teamMember) + 
+													'&week_start_date=' + encodeURIComponent(startDate) + 
+													'&week_end_date=' + encodeURIComponent(endDate);
+				}
+				// Check for Team Lead role
+				else if (c.roleExists.role === 'Lead' || c.roleExists.role === 'Agent') {
+						homepageUrl = '/feedback?id=feedback_page_one&team_member_name=' + encodeURIComponent(c.teamMember) + 
+													'&week_start_date=' + encodeURIComponent(startDate) + 
+													'&week_end_date=' + encodeURIComponent(endDate);
+				} else {
+						// Default redirection to the homepage if the user has neither role
+						homepageUrl = '/feedback?id=homepage&week_start_date=' + encodeURIComponent(startDate) + 
+													'&week_end_date=' + encodeURIComponent(endDate);
+				}
+
+				// Redirect to the appropriate URL
+				$window.location.href = homepageUrl;
+		};
+
+
+	loadUserInfo();
+  initialize();
+};
