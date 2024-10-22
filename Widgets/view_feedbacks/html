@@ -1,0 +1,92 @@
+<div ng-controller="FeedbackListController as fl" class="feedback-list-container" ng-class="{'page-enter': fl.entering, 'page-leave': fl.leaving}">
+  <h2>Feedbacks for {{ fl.teamMemberName }}</h2>
+  
+  <!-- Date Filter Controls -->
+  <div class="date-filter">
+    <label for="startDate">Start Date:</label>
+    <input type="date" id="startDate" ng-model="fl.filterStartDate" ng-change="fl.filterFeedbacks()">
+    <label for="endDate">End Date:</label>
+    <input type="date" id="endDate" ng-model="fl.filterEndDate" ng-change="fl.filterFeedbacks()">
+     <!-- Refresh Button -->
+  
+    <button ng-click="fl.refreshwidget()" class="refresh-button">Reset</button>
+  </div>
+  
+ 
+  
+   
+ 
+  
+  <div id="feedback-list" ng-if="fl.displayedFeedbacks && fl.displayedFeedbacks.length > 0">
+  <div ng-repeat="feedback in fl.displayedFeedbacks track by $index" class="feedback-item">
+      <table class="feedback-details-table">
+        <tr>
+          <th>From (Lead)</th>
+          <td>{{ feedback.team_lead_name }}</td>
+        </tr>
+        <tr>
+          <th>Feedback Period</th>
+          <td>{{ feedback.period }}</td>
+        </tr>
+        <tr>
+          <th>Feedback Text</th>
+          <td>{{ feedback.feedbackText }}</td>
+        </tr>
+       <!-- <tr>
+          <th>Comments</th>
+          <td>
+            <div ng-if="feedback.comments && feedback.comments.length > 0">
+              <ul>
+                <li ng-repeat="comment in feedback.comments track by $index">
+                  {{ comment.date | date:'yyyy-MM-dd' }} : {{ comment.text }}
+                </li>
+              </ul>
+            </div>
+            <div ng-if="!feedback.comments || feedback.comments.length === 0">
+              No comments available.
+            </div>
+          </td>
+        </tr> -->
+      </table>
+  </div>
+</div>
+
+   <!-- Pagination controls -->
+  <div class="pagination-controls" ng-if="fl.totalItems > 0">
+    <button ng-disabled="fl.currentPage === 1" ng-click="fl.changePage(fl.currentPage - 1)">Previous</button>
+    <span>Page {{ fl.currentPage }} of {{fl.noPages }}</span>
+    <button ng-disabled="fl.currentPage === Math.ceil(fl.totalItems / fl.itemsPerPage)" ng-click="fl.changePage(fl.currentPage + 1)">Next</button>
+  </div> 
+  
+    <!-- Back to Top Button -->
+  <button id="backToTop" class="back-to-top" ng-click="fl.scrollToTop()" >
+   Back to top
+  </button>
+  
+    <div class="logo-container" ng-if="fl.totalItems === 0">
+  <div class="logo">
+    <div class="letter-o">
+      <svg class="heartbeat-line" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+        <!-- Adjusted polyline for a single heartbeat -->
+        <polyline class="heartbeat" points="0,50 50,50 70,20 100,80 130,50 150,50 200,50" />
+      </svg>
+    	</div>
+  	</div>
+	</div>
+  
+  <div class="no-feedbacks-message" ng-if="!fl.loading && (fl.feedbacks.length === 0 || fl.displayedFeedbacks.length === 0)">
+     No feedbacks available
+</div>
+
+  
+</div>
+
+
+ 
+  
+
+
+  
+
+  
+ 
