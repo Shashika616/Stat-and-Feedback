@@ -1,0 +1,95 @@
+api.controller = function($scope, $window, $http) {
+  var c = this;
+  c.userRole = '';
+
+  // Helper function to calculate the current week's Monday and Sunday
+  function getCurrentWeekRange() {
+    var today = new Date();
+    var dayOfWeek = today.getDay(); // 0 (Sunday) to 6 (Saturday)
+    var monday = new Date(today); // Start with today
+
+    // Calculate Monday (subtract days to get to Monday)
+    monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1)); 
+    
+    var sunday = new Date(monday); // Start with Monday
+    sunday.setDate(monday.getDate() + 6); // Add 6 days to get Sunday
+    
+    // Format dates to 'yyyy-MM-dd'
+    var formatDate = function(date) {
+      return date.toISOString().split('T')[0]; 
+    };
+
+    return {
+      monday: formatDate(monday),
+      sunday: formatDate(sunday)
+    };
+  }
+
+  // Function to retrieve all tracking records for the user
+  function getTrackingRecords() {
+    var currentWeek = getCurrentWeekRange();
+    console.log('Current week:', currentWeek.monday, 'to', currentWeek.sunday);
+    
+    // API call to get all tracking records for the logged-in user
+    $http.get('/api/x_1462550_feedback/logged_in_user_role/userRole', {
+    }).then(function(response) {
+      console.log('Response:', response);
+      
+      var trackingRecords = response.data;
+      if (trackingRecords && trackingRecords.length > 0) {
+        
+        // First, get the latest record (first one in the list)
+        var latestRecord = trackingRecords[0];
+        console.log('Latest record:', latestRecord);
+
+        // Check if the latest record's role is "Agent"
+        if (latestRecord.role === 'Agent') {
+          console.log('Latest record role is Agent. Checking other records for Lead role.');
+
+          var hasLeadRole = trackingRecords.some(function(record) {
+            return record.role === 'Lead';
+          });
+
+          if (hasLeadRole) {
+            console.log('A Lead role was found in the records. Redirecting to Lead page.');
+            redirectBasedOnRole('Lead');
+          } else {
+            console.log('No Lead role found in other records. Redirecting to default page.');
+            redirectBasedOnRole('Agent');
+          }
+        } else {
+          // If the latest record is not "Agent", redirect based on the latest record's role
+          console.log('Latest record role is not Agent. Redirecting based on latest record role.');
+          redirectBasedOnRole(latestRecord.role);
+        }
+
+      } else {
+        console.log('No tracking records found for the user.');
+        redirectBasedOnRole(); // Default redirect
+      }
+    }, function(error) {
+      console.error('Error fetching tracking records:', error);
+      redirectBasedOnRole(); // Default redirect
+    });
+  }
+
+  // Function to redirect based on user role
+  function redirectBasedOnRole(role) {
+    if (role === 'HR Lead') {
+      console.log('Redirecting to HR Lead page');
+      $window.location.href = '/feedback?id=cs_lead_feedback_page';
+    } else if (role === 'Lead') {
+      console.log('Redirecting to Team Lead page');
+      $window.location.href = '/feedback?id=homepage';
+    } else if (role === 'Agent') {
+      console.log('Redirecting to Team Member page');
+      $window.location.href = '/feedback?id=view_feedbacks_page';
+    } else {
+      console.log('Redirecting to default homepage');
+      $window.location.href = '/feedback?id=view_feedbacks_page';
+    }
+  }
+
+  // Call the function to retrieve tracking records and check the roles
+  getTrackingRecords();
+};
