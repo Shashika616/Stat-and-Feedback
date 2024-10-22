@@ -1,0 +1,115 @@
+(function() {
+    // Initialize the data object
+    data.userInfo = {};
+    data.priorityCounts = [];
+
+    // Get the logged-in user's sys_id
+    var userId = gs.getUserID();
+    gs.info("Logged-in User ID: " + userId);
+
+    // Create a GlideRecord object for the sys_user table
+    var userGr = new GlideRecord('sys_user');
+    
+    // Check if the record exists
+    if (userGr.get(userId)) {
+        // Populate the userInfo object with the necessary user fields
+        data.userInfo = {
+            sys_id: userGr.getValue('sys_id'),
+            name: userGr.getValue('name')
+        };
+        gs.info("User Info Retrieved: " + JSON.stringify(data.userInfo));
+    } else {
+        // Log an error if user record is not found
+        gs.error("User record not found for sys_id: " + userId);
+        return;
+    }
+
+    // Step 1: Find the teams the user is associated with
+    var userTeams = [];
+    var userTeamGr = new GlideRecord('x_1462550_feedback_feedback_users');
+    userTeamGr.addQuery('user_name', data.userInfo.name);
+    userTeamGr.query();
+    
+    while (userTeamGr.next()) {
+        var team = userTeamGr.getValue('team');
+        userTeams.push(team);
+        gs.info("Team Retrieved: " + team);
+    }
+    gs.info("All Teams Associated with User: " + JSON.stringify(userTeams));
+
+    // Step 2: Get the URL parameters for filtering records by week and team member
+    var teamMemberName = $sp.getParameter('team_member_name');  // Get team member name from the URL
+    var weekStartDate = $sp.getParameter('week_start_date');  // Get week start date from the URL
+    var weekEndDate = $sp.getParameter('week_end_date');  // Get week end date from the URL
+
+    gs.info("URL Parameters - Team Member Name: " + teamMemberName);
+    gs.info("URL Parameters - Week Start Date: " + weekStartDate);
+    gs.info("URL Parameters - Week End Date: " + weekEndDate);
+
+    // Step 3: Query the 'u_sn_customerservice_case' table to filter cases acknowledged by the selected team member
+    if (userTeams.length > 0 && teamMemberName) {
+        var caseGr = new GlideRecord('u_sn_customerservice_case');
+        //caseGr.addQuery('u_acknowledged_by', teamMemberName);
+        //caseGr.addQuery('u_updated', '>=', weekStartDate);
+        //caseGr.addQuery('u_updated', '<=', weekEndDate);
+        // caseGr.addQuery('team', 'IN', userTeams);  // Uncomment this line if the field exists in the 'u_sn_customerservice_case' table
+        
+        gs.info("Querying cases for Team Member: " + teamMemberName + ", between " + weekStartDate + " and " + weekEndDate);
+        caseGr.query();
+        
+        // Initialize priority counters
+        var priorityCount = {
+            P0: 0,
+						P1: 0,
+            P2: 0,
+            P3: 0,
+						P4: 0
+        };
+
+								// Loop through the cases and count the number of records for each priority
+				while (caseGr.next()) {
+						var priority = caseGr.getValue('u_priority').trim().toLowerCase();
+						
+
+						// Use regex to remove text inside brackets
+						priority = priority.replace(/\s*\(.*?\)\s*/g, '').trim(); // Remove text in brackets
+						gs.info("Case Found - Priority: " + priority); // Log found case priority
+
+						if (priority === 'catastrophic') {
+								priorityCount.P0++;
+						} else if (priority === 'critical') {
+								priorityCount.P1++;
+						} else if (priority === 'high') {
+								priorityCount.P2++;
+						} else if (priority === 'medium)') {
+								priorityCount.P3++;
+						} else if (priority === 'low') {
+								priorityCount.P4++;
+						}
+				}
+
+
+        // Calculate the total number of cases
+        var totalCount = priorityCount.P0 + priorityCount.P1 + priorityCount.P2 + priorityCount.P3 + priorityCount.P4 ;
+        gs.info("Total Cases Counted: " + totalCount);
+
+        // Push the priority counts into the data object
+        if (totalCount > 0) {
+            data.priorityCounts = [
+                { priority: 'P0', count: priorityCount.P0, percentage: ((priorityCount.P0 / totalCount) * 100).toFixed(2) },
+                { priority: 'P1', count: priorityCount.P1, percentage: ((priorityCount.P1 / totalCount) * 100).toFixed(2) },
+                { priority: 'P2', count: priorityCount.P2, percentage: ((priorityCount.P2 / totalCount) * 100).toFixed(2) },
+								{ priority: 'P3', count: priorityCount.P3, percentage: ((priorityCount.P3 / totalCount) * 100).toFixed(2) },
+								{ priority: 'P4', count: priorityCount.P4, percentage: ((priorityCount.P4 / totalCount) * 100).toFixed(2) }
+            ];
+        } else {
+            data.priorityCounts = [];
+        }
+
+        // Log the filtered priority counts
+        gs.info("Filtered Priority Counts: " + JSON.stringify(data.priorityCounts));
+    } else {
+        // Log an error if no teams or team member name was found
+        gs.error("No teams or team member name provided for user: " + data.userInfo.name);
+    }
+})();
