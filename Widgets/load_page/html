@@ -1,0 +1,10 @@
+ <div class="logo-container" >
+  <div class="logo">
+    <div class="letter-o">
+      <svg class="heartbeat-line" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+        <!-- Adjusted polyline for a single heartbeat -->
+        <polyline class="heartbeat" points="0,50 50,50 70,20 100,80 130,50 150,50 200,50" />
+      </svg>
+    	</div>
+  	</div>
+	</div>
