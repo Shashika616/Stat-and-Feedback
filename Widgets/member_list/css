@@ -1,0 +1,211 @@
+/* Importing professional font */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: #f8f9fa;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+.team-info {
+  text-align: right;
+  margin-bottom: 10px;
+}
+
+.team-name {
+  font-size: 24px;
+  font-weight: bold;
+  color: #e69500; 
+}
+
+.team-member-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 44rem;
+  padding: 20px;
+  max-width: 800px;
+  margin: 20px auto;
+  border-radius: 10px;
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border: 2px solid #FFA500; /* Beautiful orange color */
+
+}
+
+h2 {
+  color: #FFA500; /* Beautiful orange color */
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.team-member {
+  margin: 10px 0;
+}
+
+.team-member-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background-color: #f9f9f9;
+}
+
+.team-member-name {
+  font-size: 16px;
+  color: #333; /* Dark color for the name */
+}
+
+.team-member-container button {
+  padding: 10px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+  background-color: #FFA500; /* Beautiful orange color */
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+.team-member-container button:hover {
+  background-color: #e69500; /* Slightly darker orange */
+}
+
+.pagination-controls {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.search-filters {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+  width: 0px;
+}
+
+select {
+  padding: 10px;
+  border: 1px solid #FFA500;
+  border-radius: 5px;
+  background-color: #fff;
+  font-size: 14px;
+  color: #333;
+  margin-right: 20px;
+}
+
+/* Loading container styles */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute; /* Positioned relative to #feedback-list */
+  top: 0; /* Adjust as needed */
+  left: 0; /* Adjust as needed */
+  width: 100%; /* Fill the width of #feedback-list */
+  height: 100%; /* Fill the height of #feedback-list */
+  //background-color: rgba(255, 255, 255, 0.8); /* Optional: Add a slight background to cover content */
+  z-index: 10; /* Ensure it is above other content */
+}
+
+/* Loading icon styles */
+.loading-icon {
+  //border: 8px solid #f3f3f3; /* Light grey */
+  border-top: 8px solid #ff6f00; /* Orange color */
+  border-radius: 50%;
+  width: 50px; /* Size of the loader */
+  height: 50px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.no-feedbacks-message {
+    text-align: center;
+    padding: 20px;
+    font-size: 16px;
+    color: #FF8C00; /* Red color for error */
+    //position: fixed;
+    top: 68%;
+    left: 50%;
+    //transform: translate(-50%, -50%);
+    //border: 1px solid #FF8C00;
+    //border-radius: 8px;
+    //background-color: #f9f9f9;
+}
+
+.error-icon {
+    margin-right: 10px;
+    font-size: 20px;
+}
+
+
+
+/* Container for the full logo */
+.logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 42rem;
+  background-color: #f4f4f4;
+}
+
+/* Styling for the logo */
+.logo {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+/* "O" circle styling */
+.letter-o {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  border: 10px solid black;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #FFA500;
+  box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Heartbeat SVG line */
+.heartbeat-line {
+  width: 200px;
+  height: 100px;
+}
+
+.heartbeat {
+  fill: none;
+  stroke: white;
+  stroke-width: 7;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  transform-origin: center;
+  stroke-dasharray: 150; /* Smaller dash array for smoother animation */
+  stroke-dashoffset: 150; /* Start position */
+  animation: heartbeat 2s linear infinite; /* Linear animation for smoothness */
+}
+
+@keyframes heartbeat {
+  0% {
+    stroke-dashoffset: 150;
+  }
+  50% {
+    stroke-dashoffset: 0; /* Middle of the line */
+  }
+  100% {
+    stroke-dashoffset: -150; /* End of the line */
+  }
+}
+
