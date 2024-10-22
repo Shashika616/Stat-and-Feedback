@@ -1,0 +1,144 @@
+/api/x_1462550_feedback/stat_api/casepriority/{team_member_name}/{week_start_date}/{week_end_date}
+
+
+(function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+
+    // Initialize the response object
+    var res = {};
+    res.userInfo = {};
+    res.priorityCounts = [];
+    res.cases = []; // Store case numbers and priorities
+
+    // Get the logged-in user's sys_id
+    var userId = gs.getUserID();
+    gs.info("Logged-in User ID: " + userId);
+
+    // Create a GlideRecord object for the sys_user table
+    var userGr = new GlideRecord('sys_user');
+    
+    // Check if the record exists
+    if (userGr.get(userId)) {
+        // Populate the userInfo object with the necessary user fields
+        res.userInfo = {
+            sys_id: userGr.getValue('sys_id'),
+            name: userGr.getValue('name')
+        };
+        gs.info("User Info Retrieved: " + JSON.stringify(res.userInfo));
+    } else {
+        // Log an error if user record is not found
+        gs.error("User record not found for sys_id: " + userId);
+        response.setStatus(404);
+        return { error: "User not found" };
+    }
+
+    // Step 1: Find the teams the user is associated with
+    var userTeams = [];
+    var userTeamGr = new GlideRecord('x_1462550_feedback_feedback_users');
+    userTeamGr.addQuery('user_name', res.userInfo.name);
+    userTeamGr.query();
+    
+    while (userTeamGr.next()) {
+        var team = userTeamGr.getValue('team');
+        userTeams.push(team);
+        gs.info("Team Retrieved: " + team);
+    }
+    gs.info("All Teams Associated with User: " + JSON.stringify(userTeams));
+
+    // Get URL parameters for filtering records by week and team member
+    var teamMemberName = request.pathParams.team_member_name;  
+    var weekStartDate = request.pathParams.week_start_date;  
+    var weekEndDate = request.pathParams.week_end_date;  
+
+    gs.info("Query Parameters - Team Member Name: " + teamMemberName);
+    gs.info("Query Parameters - Week Start Date: " + weekStartDate);
+    gs.info("Query Parameters - Week End Date: " + weekEndDate);
+
+    // Step 2: Query the 'u_sn_customerservice_case' table to filter cases acknowledged by the selected team member
+    if (userTeams.length > 0 && teamMemberName) {
+        var caseGr = new GlideRecord('u_sn_customerservice_case');
+        //caseGr.addQuery('u_acknowledged_by', teamMemberName);
+        //caseGr.addQuery('u_updated', '>=', weekStartDate);
+        //caseGr.addQuery('u_updated', '<=', weekEndDate);
+        //caseGr.addQuery('team', 'IN', userTeams);
+        gs.info("Querying cases for Team Member: " + teamMemberName + ", between " + weekStartDate + " and " + weekEndDate);
+        caseGr.query();
+        
+        // Initialize priority counters
+        var priorityCount = {
+            P0: 0,
+            P1: 0,
+            P2: 0,
+            P3: 0,
+            P4: 0
+        };
+
+        // Loop through the cases and count the number of records for each priority and capture case details
+        while (caseGr.next()) {
+            var caseNumber = caseGr.getValue('u_number');
+            var priority = caseGr.getValue('u_priority');
+
+			if (priority) {
+        		priority = priority.trim().toLowerCase();
+    			} else {
+        			priority = '';  // Default value when priority is null
+    		}
+			
+            var prioritytext = priority.replace(/\s*\(.*?\)\s*/g, '').trim() || ''; // Remove text in brackets
+            gs.info("Case Found - Number: " + caseNumber + ", Priority: " + prioritytext); // Log found case priority and number
+
+            // Increment the priority counters based on the priority value
+            if (prioritytext === 'catastrophic') {
+                priorityCount.P0++;
+            } else if (prioritytext === 'critical') {
+                priorityCount.P1++;
+            } else if (prioritytext === 'high') {
+                priorityCount.P2++;
+            } else if (prioritytext === 'medium') {
+                priorityCount.P3++;
+            } else if (prioritytext === 'low') {
+                priorityCount.P4++;
+            }
+
+            // Push the case details into the response array
+            res.cases.push({
+                number: caseNumber,
+                priority: priority
+            });
+        }
+
+        // Calculate the total number of cases
+        var totalCount = priorityCount.P0 + priorityCount.P1 + priorityCount.P2 + priorityCount.P3 + priorityCount.P4;
+        gs.info("Total Cases Counted: " + totalCount);
+
+        // Prepare the priority counts response
+        if (totalCount > 0) {
+            res.priorityCounts = [
+                { priority: 'P0', count: priorityCount.P0, percentage: ((priorityCount.P0 / totalCount) * 100).toFixed(2) },
+                { priority: 'P1', count: priorityCount.P1, percentage: ((priorityCount.P1 / totalCount) * 100).toFixed(2) },
+                { priority: 'P2', count: priorityCount.P2, percentage: ((priorityCount.P2 / totalCount) * 100).toFixed(2) },
+                { priority: 'P3', count: priorityCount.P3, percentage: ((priorityCount.P3 / totalCount) * 100).toFixed(2) },
+                { priority: 'P4', count: priorityCount.P4, percentage: ((priorityCount.P4 / totalCount) * 100).toFixed(2) }
+            ];
+        } else {
+            res.priorityCounts = [];
+        }
+
+        // Log the filtered priority counts
+        gs.info("Filtered Priority Counts: " + JSON.stringify(res.priorityCounts));
+        gs.info("Filtered Case Details: " + JSON.stringify(res.cases));
+    } else {
+        // Log an error if no teams or team member name was found
+        gs.error("No teams or team member name provided for user: " + res.userInfo.name);
+        response.setStatus(400);
+        return { error: "No teams or team member name provided" };
+    }
+
+    // Convert the response object to a JSON string
+    var responseJSON = JSON.stringify(res);
+
+    // Set the response body with the user info, priority counts, and case details in JSON format
+    response.setStatus(200);
+    response.setHeader('Content-Type', 'application/json');
+    response.getStreamWriter().writeString(responseJSON);
+
+})(request, response);
