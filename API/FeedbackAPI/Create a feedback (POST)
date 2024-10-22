@@ -1,0 +1,90 @@
+(function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+    // Parse the request body
+    var requestBody = request.body.data || {};
+
+    // Log the parsed request body for debugging
+    gs.info('Parsed Request Body: ' + JSON.stringify(requestBody));
+
+    // Check if the request body is empty
+    if (Object.keys(requestBody).length === 0) {
+        response.setStatus(400);
+        response.setBody({ error: 'Request body is empty' });
+        return;
+    }
+
+    // Extract values from the request
+    var teamMemberName = requestBody.team_member_name;
+    var teamLeadName = requestBody.team_lead_name;
+    var startingFrom = requestBody.starting_from || '';
+    var endsOn = requestBody.ends_on || '';
+    var feedbackText = requestBody.feedback_text || '';
+    var comments = JSON.stringify(requestBody.comments || []);
+    var technicalKnowledge = requestBody.technical_knowledge || '';
+    var communication = requestBody.communication || '';
+    var teamwork = requestBody.teamwork || '';
+    var leadership = requestBody.leadership || '';
+    var commitment = requestBody.commitment || '';
+    var extraContribution = requestBody.extra_contribution || '';
+
+    // Validate required fields
+    if (!teamMemberName || !teamLeadName) {
+        response.setStatus(400);
+        response.setBody({ error: 'team_member_name and team_lead_name are required' });
+        return;
+    }
+
+    // Check for existing feedback with the same team_member_name, starting_from, and ends_on
+    var gr = new GlideRecord('x_1462550_feedback_feedbacktable');
+    gr.addQuery('team_member_name', teamMemberName);
+    gr.addQuery('starting_from', startingFrom);
+    gr.addQuery('ends_on', endsOn);
+    gr.query();
+
+    if (gr.hasNext()) {
+        // Update existing record
+        gr.next();
+        gr.team_lead_name = teamLeadName;
+        gr.feedback_text = feedbackText;
+        gr.comments = comments;
+        gr.technical_knowledge = technicalKnowledge;
+        gr.communication = communication;
+        gr.teamwork = teamwork;
+        gr.leadership = leadership;
+        gr.commitment = commitment;
+        gr.extra_contribution = extraContribution;
+        gr.update();
+
+        response.setStatus(200);
+        response.setBody({
+            message: 'Feedback record updated successfully',
+            sys_id: gr.sys_id
+        });
+    } else {
+        // Create a new feedback record
+        var newFeedback = new GlideRecord('x_1462550_feedback_feedbacktable');
+        newFeedback.initialize();
+        newFeedback.team_member_name = teamMemberName;
+        newFeedback.team_lead_name = teamLeadName;
+        newFeedback.date_created = new GlideDateTime().getValue(); // ISO format
+        newFeedback.submission_status = 'Pending';
+        newFeedback.starting_from = startingFrom;
+        newFeedback.ends_on = endsOn;
+        newFeedback.feedback_text = feedbackText;
+        newFeedback.comments = comments;
+        newFeedback.technical_knowledge = technicalKnowledge;
+        newFeedback.communication = communication;
+        newFeedback.teamwork = teamwork;
+        newFeedback.leadership = leadership;
+        newFeedback.commitment = commitment;
+        newFeedback.extra_contribution = extraContribution;
+
+        newFeedback.insert();
+
+        // Respond with the new feedback record sys_id
+        response.setStatus(201);
+        response.setBody({
+            message: 'Feedback record created successfully',
+            sys_id: newFeedback.sys_id
+        });
+    }
+})(request, response);
