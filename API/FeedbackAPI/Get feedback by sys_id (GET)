@@ -1,0 +1,47 @@
+/api/x_1462550_feedback/feedbackapi/feedback/{sys_id}
+
+
+(function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+    // Get the record ID from the path parameter
+    var recordId = request.pathParams.sys_id;
+    
+    // Query the feedback table using the record ID
+    var gr = new GlideRecord('x_1462550_feedback_feedbacktable');
+    gr.addQuery('sys_id', recordId);
+    gr.query();
+
+    // Check if a record was found
+    if (gr.next()) {
+        // Create an object to hold the feedback record data
+        var feedbackRecord = {
+            sys_id: gr.getValue('sys_id'),
+            starting_from: gr.getValue('starting_from') || "",
+            ends_on: gr.getValue('ends_on') || "",
+            team_lead_name: gr.getValue('team_lead_name') || "",
+            team_member_name: gr.getValue('team_member_name') || "",
+            feedback_text: gr.getValue('feedback_text') || "",
+            comments: gr.getValue('comments') || "[]",
+            technical_knowledge: gr.getValue('technical_knowledge') || "",
+            communication: gr.getValue('communication') || "",
+            teamwork: gr.getValue('teamwork') || "",
+            leadership: gr.getValue('leadership') || "",
+            commitment: gr.getValue('commitment') || "",
+            extra_contribution: gr.getValue('extra_contribution') || "",
+            week: gr.getValue('week') || ""
+        };
+        
+        // Convert the object to a JSON string
+        var feedbackJSON = JSON.stringify(feedbackRecord);
+        
+        // Set the response body with the feedback record in JSON format
+        response.setStatus(200);
+        response.setHeader('Content-Type', 'application/json');
+        response.getStreamWriter().writeString(feedbackJSON);
+    } else {
+        // Record not found
+        var errorResponse = JSON.stringify({error: 'Record not found'});
+        response.setStatus(404);
+        response.setHeader('Content-Type', 'application/json');
+        response.getStreamWriter().writeString(errorResponse);
+    }
+})(request, response);
