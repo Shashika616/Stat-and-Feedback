@@ -1,0 +1,396 @@
+api.controller = function($scope, $location, spUtil, $timeout, $http, $window) {
+    var c = this;
+    c.isExpanded = false;
+    c.isTaskSelected = false;
+    c.TaskSelected = null;
+		c.task = '';
+		c.noOfTasks = '';
+		c.casePriority = [];
+		c.noQuery = 0 ;
+		
+
+    // Fetch URL parameters
+    c.teamMemberName = getUrlParameter('team_member_name') || '';
+    c.weekStartDate = getUrlParameter('week_start_date') || '';
+    c.weekEndDate = getUrlParameter('week_end_date') || '';
+    console.log('Team Member Name : ', c.teamMemberName);
+
+    // Initialize data
+    c.data = {
+        userInfo: {},
+        filteredTeamMembers: [],
+        priorityCounts: [],
+        tasks: [],
+        selectedTask: {}
+    };
+
+    // Store chart instances for later destruction
+    var donutChartPriorityInstance = null;
+    var barChartTasksInstance = null;
+    var donutChartTasksInstance = null;
+		var barChartTaskPrioritiesInstance = null;
+
+    // Fetch priority counts from the API
+    $http.get('/api/x_1462550_feedback/stat_api/casepriority/' + c.teamMemberName + '/' + c.weekStartDate + '/' + c.weekEndDate)
+        .then(function(response) {
+            if (response.data) {
+                c.data.priorityCounts = response.data.priorityCounts || [];
+								c.casePriority = response.data.cases || [];
+								console.log('Task priority : ', c.data.priorityCounts);
+								console.log('Case priority : ', c.casePriority);
+							
+								 // Count the priority levels
+                countPriorityLevels();	
+								renderBarChartTaskPriorities();
+							
+                if (c.data.priorityCounts.length > 0) {
+                    $timeout(function() {
+                        renderDonutChartPriority(c.data.priorityCounts);
+                    });
+                }
+            } else {
+                console.error("Invalid response from the API:", response);
+            }
+        })
+        .catch(function(error) {
+            console.error("Error fetching data from API:", error);
+        });
+
+    // Function to render the priority donut chart
+    function renderDonutChartPriority(priorityCounts) {
+        var ctx = document.getElementById('donutChartPriority');
+        if (ctx) {
+            // Destroy previous chart if exists
+            if (donutChartPriorityInstance) {
+                donutChartPriorityInstance.destroy();
+            }
+
+            donutChartPriorityInstance = new Chart(ctx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: priorityCounts.map(item => item.priority),
+                    datasets: [{
+                        data: priorityCounts.map(item => item.count),
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#FF9F40', '#4BC0C0']
+                    }]
+                },
+                options: {
+                    title: {
+                        display: true,
+                        text: 'Case Priorities for the Selected Week',
+                        fontColor: 'white',
+                        fontSize: 16
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            fontColor: 'white',
+                            fontSize: 14
+                        }
+                    },
+                    responsive: true
+                }
+            });
+        }
+    }
+
+				// Fetch task data from the API
+		$http.get('/api/x_1462550_feedback/stat_api/totaltime/' + c.teamMemberName + '/' + c.weekStartDate + '/' + c.weekEndDate)
+				.then(function(response) {
+						if (response.data) {
+								c.data.tasks = response.data.tasks || [];
+
+								// Use a Set to count unique tasks
+								var uniqueTasksSet = new Set();
+								c.data.tasks.forEach(function(task) {
+										uniqueTasksSet.add(task.task); // Only adds unique tasks to the Set
+								});
+
+								// Assign the count of unique tasks
+								c.noOfTasks = uniqueTasksSet.size;
+								console.log('Unique Task Count: ', c.noOfTasks);
+
+								if (c.data.tasks.length > 0) {
+										$timeout(function() {
+												renderBarChartTasks(c.data.tasks);
+										});
+								}
+						}
+				})
+				.catch(function(error) {
+						console.error("Error fetching data from API:", error);
+				});
+
+
+    // Function to render the bar chart for tasks
+    function renderBarChartTasks(tasks) {
+        var ctx = document.getElementById('barChartTasks');
+        if (ctx) {
+            // Destroy previous chart if exists
+            if (barChartTasksInstance) {
+                barChartTasksInstance.destroy();
+            }
+
+            var taskNames = tasks.map(item => item.task);
+            var totalTimes = tasks.map(item => 
+                item.analyzing + item.setting_up + item.reproducing_debugging + item.providing_solution_answering
+            );
+
+            barChartTasksInstance = new Chart(ctx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: taskNames,
+                    datasets: [{
+                        label: 'Total Time',
+                        data: totalTimes,
+                        backgroundColor: '#36A2EB',
+                        borderColor: '#36A2EB',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    title: {
+                        display: true,
+                        text: 'Total Time Spent on Tasks',
+                        fontColor: 'white',
+                        fontSize: 16
+                    },
+                    legend: {
+                        display: false
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                fontColor: 'white',
+                                fontSize: 14
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                fontColor: 'white',
+                                fontSize: 14,
+                                beginAtZero: true
+                            }
+                        }
+                    },
+                    onClick: function(event, activeElements) {
+                        if (activeElements.length > 0) {
+                            var taskIndex = activeElements[0].index;
+                            c.TaskSelected = tasks[taskIndex];
+                            c.isTaskSelected = true;
+                            // Clear and destroy existing donut chart for tasks
+                            clearDonutChart();
+                            renderDonutChartForTask(c.TaskSelected);
+                            $scope.$apply();
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // Clear and destroy the existing donut chart for tasks
+    function clearDonutChart() {
+        var ctx = document.getElementById('donutChartTasks');
+        if (ctx && donutChartTasksInstance) {
+            donutChartTasksInstance.destroy();
+            ctx.getContext('2d').clearRect(0, 0, ctx.width, ctx.height);
+        }
+    }
+
+// Render the donut chart for the selected task
+function renderDonutChartForTask(task) {
+	
+	c.task = task.task;
+    setTimeout(function() {	
+        var ctx = document.getElementById('donutChartTasks');
+        if (ctx) {
+            var taskLabels = ['Analyzing', 'Setting Up', 'Reproducing & Debugging', 'Providing Solution & Answering'];
+
+            // Destroy existing chart before rendering a new one
+            if (donutChartTasksInstance) {
+                donutChartTasksInstance.destroy();
+            }
+
+            // Prepare data for the chart
+            var taskData = [
+                task.analyzing,
+                task.setting_up,
+                task.reproducing_debugging,
+                task.providing_solution_answering
+            ];
+
+            donutChartTasksInstance = new Chart(ctx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: taskLabels,
+                    datasets: [{
+                        data: taskData,
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
+                    }]
+                },
+                options: {
+                    title: {
+                        display: true,
+                        text: 'Task Time Breakdown for ' + task.task,
+                        fontColor: 'white',
+                        fontSize: 16
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            fontColor: 'white',
+                            fontSize: 14
+                        }
+                    },
+                    responsive: true,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(tooltipItem) {
+                                    var dataset = tooltipItem.dataset; // Access the dataset
+                                    var index = tooltipItem.dataIndex; // Get the index of the hovered item
+                                    var value = dataset.data[index]; // Get the value based on the index
+                                    return taskLabels[index] + ': ' + value; // Return formatted string
+                                }
+															
+                            }
+													
+                        }
+											
+                    }
+                }
+							
+            });
+        } else {
+            console.error("Canvas element 'donutChartTasks' not found.");
+        }
+    }, 0); // A small delay to ensure DOM update
+}
+	
+			// Function to render the bar chart for task priorities
+		function renderBarChartTaskPriorities() {
+				var ctx = document.getElementById('barChartTaskPriorities'); // Make sure to add a canvas element with this ID in your HTML
+				if (ctx) {
+						// Destroy previous chart if it exists
+						if (barChartTaskPrioritiesInstance) {
+								barChartTaskPrioritiesInstance.destroy();
+						}
+
+						var priorityLabels = ['P0', 'P1', 'P2', 'P3', 'P4', 'Query'];
+						var priorityCounts = [c.p0, c.p1, c.p2, c.p3, c.p4, c.noQuery];
+
+						barChartTaskPrioritiesInstance = new Chart(ctx.getContext('2d'), {
+								type: 'bar',
+								data: {
+										labels: priorityLabels,
+										datasets: [{
+												label: 'Task Priorities Count',
+												data: priorityCounts,
+												backgroundColor: '#36A2EB',
+												borderColor: '#36A2EB',
+												borderWidth: 1
+										}]
+								},
+								options: {
+										responsive: true,
+										title: {
+												display: true,
+												text: 'Count of Tasks by Priority',
+												fontColor: 'white',
+												fontSize: 16
+										},
+										legend: {
+												display: false
+										},
+										scales: {
+												x: {
+														ticks: {
+																fontColor: 'white',
+																fontSize: 14
+														}
+												},
+												y: {
+														ticks: {
+																fontColor: 'white',
+																fontSize: 14,
+																beginAtZero: true
+														}
+												}
+										}
+								}
+						});
+				}
+		}
+
+
+  // Function to count the priority levels (p0, p1, p2, p3)
+    function countPriorityLevels() {
+        // Reset counts before counting again
+        c.p0 = 0;
+        c.p1 = 0;
+        c.p2 = 0;
+        c.p3 = 0;
+				c.p4 = 0;
+				c.noQuery = 0;
+
+        c.casePriority.forEach(function(caseItem) {
+            switch (caseItem.priority) {
+                case 'catastrophic (p0)':
+                    c.p0++;
+                    break;
+                case 'critical (p1)':
+                    c.p1++;
+                    break;
+                case 'high (p2)':
+                    c.p2++;
+                    break;
+                case 'medium (p3)':
+                    c.p3++;
+                    break;
+								case 'low (p4)':
+                    c.p4++;
+                    break;
+								case '':
+                    c.noQuery++;
+                    break;
+                default:
+                    break;
+            }
+        });
+
+        console.log('PO count: ', c.p0);
+        console.log('P1 count: ', c.p1);
+        console.log('P2 count: ', c.p2);
+        console.log('P3 count: ', c.p3);
+				console.log('P4 count: ', c.p4);
+    }
+
+	// Function to get the priority of a task
+c.getTaskPriority = function(task) {
+    console.log('Task passed to getTaskPriority: ', task); // Log the task being passed
+
+    // Find the task in the casePriority array
+    var taskObj = c.casePriority.find(function(caseItem) {
+        console.log('Checking caseItem:', caseItem); // Log each caseItem being checked
+        return caseItem.number === task;
+    });
+
+    // Log the result of the find operation
+    console.log('Found taskObj:', taskObj);
+
+    // Return the priority if found, or null if not
+    return taskObj ? taskObj.priority : null;
+};
+
+
+    // Function to get URL parameter
+    function getUrlParameter(name) {
+        var regex = new RegExp('[?&]' + name + '=([^&#]*)');
+        var results = regex.exec($window.location.href);
+        return results ? decodeURIComponent(results[1].replace(/\+/g, ' ')) : '';
+    }
+};
