@@ -1,0 +1,40 @@
+/api/x_1462550_feedback/feedbackapi/update_feedback/{sys_id}
+
+
+(function process(/*RESTAPIRequest*/ request, /*RESTAPIResponse*/ response) {
+    // Get the record_id from the URL parameter
+    var recordID = request.pathParams.sys_id;
+
+    // Create a GlideRecord object for the feedback table
+    var gr = new GlideRecord('x_1462550_feedback_feedbacktable');
+    
+    // Query the table using the record_id
+    if (gr.get('sys_id', recordID)) {
+        // Record found, update fields from the request body
+        var requestBody = request.body.data;
+
+        if (requestBody.starting_from) gr.setValue('starting_from', requestBody.starting_from);
+        if (requestBody.ends_on) gr.setValue('ends_on', requestBody.ends_on);
+        if (requestBody.feedback_text) gr.setValue('feedback_text', requestBody.feedback_text);
+        if (requestBody.comments) gr.setValue('comments', requestBody.comments);
+        if (requestBody.technical_knowledge) gr.setValue('technical_knowledge', requestBody.technical_knowledge);
+        if (requestBody.communication) gr.setValue('communication', requestBody.communication);
+        if (requestBody.teamwork) gr.setValue('teamwork', requestBody.teamwork);
+        if (requestBody.leadership) gr.setValue('leadership', requestBody.leadership);
+        if (requestBody.commitment) gr.setValue('commitment', requestBody.commitment);
+        if (requestBody.extra_contribution) gr.setValue('extra_contribution', requestBody.extra_contribution);
+        if (requestBody.week) gr.setValue('week', requestBody.week);
+        if (requestBody.submission_status !== undefined) gr.setValue('submission_status', requestBody.submission_status);
+
+        // Update the record
+        gr.update();
+
+        // Respond with success
+        response.setStatus(200);
+        response.setBody({ status: 'success', message: 'Feedback record updated successfully' });
+    } else {
+        // Record not found
+        response.setStatus(404);
+        response.setBody({ status: 'failure', message: 'Feedback record not found' });
+    }
+})(request, response);
